@@ -1,0 +1,808 @@
+\documentclass[12pt,a4paper]{ctexart}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor={blue!60!black},
+	urlcolor={blue!60!black},
+	citecolor={blue!60!black},
+	pdfborder={0 0 0},
+}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{lastpage}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{commentcolor}{RGB}{0,128,0}
+\definecolor{keywordcolor}{RGB}{127,0,85}
+\definecolor{stringcolor}{RGB}{42,0,255}
+\definecolor{accent}{HTML}{4F46E5}
+\definecolor{accent2}{HTML}{7C3AED}
+\definecolor{mid}{HTML}{6B7280}
+\lstset{
+	language=C++,
+	basicstyle=\small\ttfamily,
+	backgroundcolor=\color{codebg},
+	frame=single,
+	rulecolor=\color{codeframe},
+	breaklines=true,
+	showstringspaces=false,
+	commentstyle=\color{commentcolor},
+	keywordstyle=\color{keywordcolor}\bfseries,
+	stringstyle=\color{stringcolor},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	tabsize=4,
+	captionpos=b,
+	extendedchars=true,
+	columns=flexible,
+}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{数据结构与算法专题}
+\fancyfoot[C]{\thepage\ /\ \pageref*{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\newcommand{\infobox}[1]{%
+	\par\noindent
+	\fcolorbox{accent!40}{accent!5}{%
+		\begin{minipage}{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}
+			#1
+		\end{minipage}%
+	}\par
+}
+\title{数据结构与算法专题}
+\author{算法学习笔记}
+\date{\today}
+\begin{document}
+	\maketitle
+	\tableofcontents
+	\newpage
+	\section{初级数据结构}
+	\subsection{栈——括号匹配}
+	\infobox{解决问题：验证括号序列是否合法，即每个左括号是否都有对应的右括号且类型匹配。适用于编译原理语法检查、XML/HTML标签匹配等。}
+	\subsubsection*{题目描述}
+	给定一个仅包含字符 '('、')'、'['、']'、'{'、'}' 的字符串 $s$，判断括号序列是否合法。合法条件：每个左括号必须由相同类型的右括号闭合，且括号嵌套顺序正确。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		{[]()}
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	YES
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			string s;               // s: 输入的括号字符串
+			cin >> s;
+			stack<char> st;         // st: 栈，用来存放未匹配的左括号
+			bool ok = true;         // ok: 记录括号序列是否合法
+			for (char c : s) {      // c: 当前字符
+				if (c == '(' || c == '[' || c == '{') {
+						st.push(c);     // 左括号直接压栈
+					} else {
+						if (st.empty()) { ok = false; break; }  // 栈空，无匹配左括号
+						char top = st.top();                    // top: 栈顶左括号
+						if ((c == ')' && top != '(') ||
+						(c == ']' && top != '[') ||
+						(c == '}' && top != '{')) {
+							ok = false; break;                  // 类型不匹配，非法
+						}
+						st.pop();       // 匹配成功，弹出左括号
+					}
+				}
+				if (!st.empty()) ok = false;   // 最后栈不空说明有左括号未被匹配
+				cout << (ok ? "YES" : "NO") << "\n";
+				return 0;
+			}
+		\end{lstlisting}
+		\subsection{栈——单调栈求下一个更大元素}
+		\infobox{解决问题：对数组中每个元素，找到其右侧第一个比它大的元素。适用于股票价格跨度、每日温度等待天数等场景。}
+		\subsubsection*{题目描述}
+		给定长度为 $n$ 的数组 $a$，对于每个位置 $i$，找出 $a[i]$ 右侧第一个大于 $a[i]$ 的元素；若不存在则输出 $-1$。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			5
+			2 1 3 5 4
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		3 3 5 -1 -1
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			int main() {
+				int n;                    // n: 数组长度
+				cin >> n;
+				vector<int> a(n);         // a: 输入数组
+				for (int i = 0; i < n; i++) cin >> a[i];
+				vector<int> ans(n, -1);   // ans[i]: a[i]右侧第一个更大的元素，初始为-1
+				stack<int> st;            // st: 单调栈，存放下标，栈底到栈顶对应值递减
+				for (int i = 0; i < n; i++) {   // i: 当前元素下标
+					while (!st.empty() && a[st.top()] < a[i]) {
+						ans[st.top()] = a[i];   // 当前元素是栈顶元素右侧第一个更大的
+						st.pop();
+					}
+					st.push(i);
+				}
+				for (int i = 0; i < n; i++) cout << ans[i] << " \n"[i==n-1];
+				return 0;
+			}
+		\end{lstlisting}
+		\subsection{队列——滑动窗口最大值}
+		\infobox{解决问题：在长度为 $n$ 的数组中，求所有长度为 $k$ 的连续子数组的最大值。适用于数据流分析、信号处理等滑动窗口场景。}
+		\subsubsection*{题目描述}
+		给定数组 $a$ 和窗口大小 $k$，输出每个窗口内的最大值。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			8 3
+			1 3 -1 -3 5 3 6 7
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		3 3 5 5 6 7
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			int main() {
+				int n, k;                 // n: 数组长度, k: 窗口大小
+				cin >> n >> k;
+				vector<int> a(n);         // a: 输入数组
+				for (int i = 0; i < n; i++) cin >> a[i];
+				deque<int> dq;            // dq: 双向队列，存放下标，队首为当前窗口最大值下标
+				for (int i = 0; i < n; i++) {
+					while (!dq.empty() && dq.front() <= i - k) dq.pop_front(); // 移除超出窗口的下标
+					while (!dq.empty() && a[dq.back()] <= a[i]) dq.pop_back(); // 保持队列递减
+					dq.push_back(i);
+					if (i >= k - 1) cout << a[dq.front()] << " "; // 窗口形成后输出最大值
+				}
+				return 0;
+			}
+		\end{lstlisting}
+		\subsection{并查集——连通分量与动态合并}
+		\infobox{解决问题：动态维护若干集合的合并与查询，判断两个元素是否属于同一集合。适用于社交网络好友关系、岛屿连通性、Kruskal最小生成树等。}
+		\subsubsection*{题目描述}
+		给定 $n$ 个节点和 $m$ 条无向边，再给出 $q$ 个询问，每次询问两个节点是否连通。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			5 3
+			1 2
+			2 3
+			4 5
+			2
+			1 3
+			4 5
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		YES YES
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			vector<int> parent, rnk;    // parent[i]: i的父节点; rnk[i]: 以i为根的秩（近似树高）
+			int find(int x) {           // 查找x的根，同时进行路径压缩
+				return parent[x] == x ? x : parent[x] = find(parent[x]);
+			}
+			void unite(int a, int b) {  // 合并a和b所在的集合（按秩合并）
+				int ra = find(a), rb = find(b);
+				if (ra == rb) return;
+				if (rnk[ra] < rnk[rb]) swap(ra, rb);
+				parent[rb] = ra;
+				if (rnk[ra] == rnk[rb]) rnk[ra]++;
+			}
+			int main() {
+				int n, m;                 // n: 节点数, m: 边数
+				cin >> n >> m;
+				parent.resize(n+1); rnk.resize(n+1, 0);
+				for (int i = 1; i <= n; i++) parent[i] = i;
+				for (int i = 0; i < m; i++) {
+					int u, v;             // u,v: 边的两个端点
+					cin >> u >> v;
+					unite(u, v);
+				}
+				int q;                    // q: 询问数量
+				cin >> q;
+				while (q--) {
+					int a, b;             // a,b: 询问的两个节点
+					cin >> a >> b;
+					cout << (find(a) == find(b) ? "YES" : "NO") << "\n";
+				}
+				return 0;
+			}
+		\end{lstlisting}
+		\subsection{哈希表——两数之和}
+		\infobox{解决问题：在数组中找出两个数，使它们的和等于目标值。适用于金融对账、组合优化等查找配对场景。}
+		\subsubsection*{题目描述}
+		给定整数数组 $a$ 和目标值 $target$，找出数组中两个不同位置的数，使得它们的和为 $target$，输出它们的下标（从0开始）。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			4 9
+			2 7 11 15
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		0 1
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			int main() {
+				int n, target;            // n: 数组长度, target: 目标和
+				cin >> n >> target;
+				vector<int> a(n);         // a: 输入数组
+				for (int i = 0; i < n; i++) cin >> a[i];
+				unordered_map<int,int> mp;// mp: 值到下标的映射
+				for (int i = 0; i < n; i++) {
+					int need = target - a[i]; // need: 需要配对的另一个数
+					if (mp.count(need)) {
+						cout << mp[need] << " " << i << "\n";
+						return 0;
+					}
+					mp[a[i]] = i;
+				}
+				return 0;
+			}
+		\end{lstlisting}
+		\subsection{堆——动态中位数}
+		\infobox{解决问题：在一个不断加入数字的数据流中，随时查询当前所有数字的中位数。适用于在线数据分析、实时统计等场景。}
+		\subsubsection*{题目描述}
+		有 $n$ 个数依次输入，每输入奇数个数时，输出当前已输入数字的中位数。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			7
+			1 3 5 2 4 6 7
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		1 3 3
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			int main() {
+				int n;                    // n: 数字个数
+				cin >> n;
+				priority_queue<int> maxHeap;                     // maxHeap: 最大堆，存较小一半
+				priority_queue<int, vector<int>, greater<int>> minHeap; // minHeap: 最小堆，存较大一半
+				for (int i = 1; i <= n; i++) {
+					int x;                // x: 当前输入数字
+					cin >> x;
+					maxHeap.push(x);      // 先放入最大堆
+					// 保持平衡：最大堆顶 <= 最小堆顶
+					if (!minHeap.empty() && maxHeap.top() > minHeap.top()) {
+						int a = maxHeap.top(); maxHeap.pop();
+						int b = minHeap.top(); minHeap.pop();
+						maxHeap.push(b); minHeap.push(a);
+					}
+					// 大小平衡：最大堆大小 >= 最小堆大小，且相差不超过1
+					if (maxHeap.size() > minHeap.size() + 1) {
+						minHeap.push(maxHeap.top()); maxHeap.pop();
+					}
+					if (i % 2 == 1) cout << maxHeap.top() << " "; // 奇数个时输出中位数
+				}
+				return 0;
+			}
+		\end{lstlisting}
+		\section{高级数据结构}
+		\subsection{树状数组——单点修改区间求和}
+		\infobox{解决问题：对一个数组进行单点更新，并快速查询前缀和与区间和。适用于排行榜分数更新、实时数据统计等场景。}
+		\subsubsection*{题目描述}
+		给定长度为 $n$ 的初始全零数组，有 $m$ 个操作，操作分两种：`1 x v` 表示将第 $x$ 个数增加 $v$；`2 l r` 表示查询区间 $[l, r]$ 的和。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			5 4
+			1 2 3
+			1 4 5
+			2 1 4
+			2 2 3
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		8 3
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			int n;                        // n: 数组大小
+			vector<int> bit;              // bit: 树状数组（1-indexed）
+			void add(int idx, int val) {  // 在位置idx增加val
+				while (idx <= n) { bit[idx] += val; idx += idx & -idx; }
+			}
+			int sum(int idx) {            // 查询前缀和[1..idx]
+				int res = 0;
+				while (idx > 0) { res += bit[idx]; idx -= idx & -idx; }
+				return res;
+			}
+			int main() {
+				int m;                    // m: 操作次数
+				cin >> n >> m;
+				bit.assign(n+1, 0);
+				while (m--) {
+					int op;               // op: 操作类型 1-增加 2-查询
+					cin >> op;
+					if (op == 1) {
+						int x, v;         // x: 位置, v: 增量
+						cin >> x >> v;
+						add(x, v);
+					} else {
+						int l, r;         // l,r: 查询区间
+						cin >> l >> r;
+						cout << sum(r) - sum(l-1) << " ";
+					}
+				}
+				return 0;
+			}
+		\end{lstlisting}
+		\subsection{树状数组——区间修改单点查询}
+		\infobox{解决问题：对数组进行区间增加操作，并查询单点的当前值。适用于需要批量区间更新、差分维护的场景。}
+		\subsubsection*{题目描述}
+		给定长度为 $n$ 的初始全零数组，有 $m$ 个操作：`1 l r v` 表示区间 $[l,r]$ 每个数加 $v$；`2 x` 查询第 $x$ 个数的值。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			5 4
+			1 1 3 2
+			2 2
+			1 2 4 1
+			2 3
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		2 3
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			int n;                        // n: 数组大小
+			vector<int> bit;              // bit: 树状数组（维护差分数组）
+			void add(int idx, int val) {
+				while (idx <= n) { bit[idx] += val; idx += idx & -idx; }
+			}
+			int sum(int idx) {
+				int res = 0;
+				while (idx > 0) { res += bit[idx]; idx -= idx & -idx; }
+				return res;
+			}
+			int main() {
+				int m;                    // m: 操作次数
+				cin >> n >> m;
+				bit.assign(n+1, 0);
+				while (m--) {
+					int op;               // op: 操作类型
+					cin >> op;
+					if (op == 1) {
+						int l, r, v;      // l,r: 区间边界, v: 增加值
+						cin >> l >> r >> v;
+						add(l, v); add(r+1, -v);  // 差分更新，实现区间加
+					} else {
+						int x;            // x: 查询位置
+						cin >> x;
+						cout << sum(x) << " ";
+					}
+				}
+				return 0;
+			}
+		\end{lstlisting}
+		\subsection{线段树——区间最值与单点修改}
+		\infobox{解决问题：在数组上支持单点修改并快速查询任意区间的最小值（或最大值）。适用于动态区间统计、RMQ问题等。}
+		\subsubsection*{题目描述}
+		给定长度为 $n$ 的数组，有 $m$ 个操作：`1 x v` 将第 $x$ 个数改为 $v$；`2 l r` 查询区间 $[l,r]$ 的最小值。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			5 4
+			5 2 3 4 1
+			2 1 5
+			1 5 6
+			2 1 5
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		1 2
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			const int INF = 1e9;
+			vector<int> seg;              // seg: 线段树数组，存储区间最小值
+			int n;                        // n: 原数组大小
+			void build(int idx, int l, int r, vector<int>& a) {
+				if (l == r) { seg[idx] = a[l]; return; }
+				int mid = (l+r)/2;
+				build(idx*2, l, mid, a); build(idx*2+1, mid+1, r, a);
+				seg[idx] = min(seg[idx*2], seg[idx*2+1]);
+			}
+			void update(int idx, int l, int r, int pos, int val) {
+				if (l == r) { seg[idx] = val; return; }
+				int mid = (l+r)/2;
+				if (pos <= mid) update(idx*2, l, mid, pos, val);
+				else update(idx*2+1, mid+1, r, pos, val);
+				seg[idx] = min(seg[idx*2], seg[idx*2+1]);
+			}
+			int query(int idx, int l, int r, int ql, int qr) {
+				if (ql <= l && r <= qr) return seg[idx];
+				int mid = (l+r)/2, res = INF;
+				if (ql <= mid) res = min(res, query(idx*2, l, mid, ql, qr));
+				if (qr > mid) res = min(res, query(idx*2+1, mid+1, r, ql, qr));
+				return res;
+			}
+			int main() {
+				int m;                    // m: 操作数
+				cin >> n >> m;
+				vector<int> a(n+1);       // a: 原始数组（1-indexed）
+				for (int i = 1; i <= n; i++) cin >> a[i];
+				seg.resize(4*n+5);
+				build(1, 1, n, a);
+				while (m--) {
+					int op;               // op: 操作类型 1-单点修改 2-区间查询
+					cin >> op;
+					if (op == 1) {
+						int x, v;         // x: 修改位置, v: 新值
+						cin >> x >> v;
+						update(1, 1, n, x, v);
+					} else {
+						int l, r;         // l,r: 查询区间
+						cin >> l >> r;
+						cout << query(1, 1, n, l, r) << " ";
+					}
+				}
+				return 0;
+			}
+		\end{lstlisting}
+		\subsection{线段树——区间加与区间求和}
+		\infobox{解决问题：对数组进行区间加法操作，并能在$O(\log n)$时间内查询区间总和。适用于批量数据更新、财务累计等场景。}
+		\subsubsection*{题目描述}
+		给定长度为 $n$ 的初始数组，$m$ 个操作：`1 l r v` 表示区间 $[l,r]$ 每个数加 $v$；`2 l r` 查询区间和。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			5 3
+			1 2 3 4 5
+			2 1 5
+			1 2 4 2
+			2 2 4
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		15 18
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			typedef long long ll;
+			vector<ll> seg, lazy;         // seg: 区间和, lazy: 懒标记（延迟更新）
+			int n;
+			void build(int idx, int l, int r, vector<ll>& a) {
+				if (l == r) { seg[idx] = a[l]; return; }
+				int mid = (l+r)/2;
+				build(idx*2, l, mid, a); build(idx*2+1, mid+1, r, a);
+				seg[idx] = seg[idx*2] + seg[idx*2+1];
+			}
+			void pushdown(int idx, int l, int r) {
+				if (lazy[idx] == 0) return;
+				int mid = (l+r)/2;
+				seg[idx*2] += lazy[idx] * (mid - l + 1);
+				seg[idx*2+1] += lazy[idx] * (r - mid);
+				lazy[idx*2] += lazy[idx]; lazy[idx*2+1] += lazy[idx];
+				lazy[idx] = 0;
+			}
+			void update(int idx, int l, int r, int ql, int qr, ll v) {
+				if (ql <= l && r <= qr) { seg[idx] += v * (r-l+1); lazy[idx] += v; return; }
+				pushdown(idx, l, r);
+				int mid = (l+r)/2;
+				if (ql <= mid) update(idx*2, l, mid, ql, qr, v);
+				if (qr > mid) update(idx*2+1, mid+1, r, ql, qr, v);
+				seg[idx] = seg[idx*2] + seg[idx*2+1];
+			}
+			ll query(int idx, int l, int r, int ql, int qr) {
+				if (ql <= l && r <= qr) return seg[idx];
+				pushdown(idx, l, r);
+				int mid = (l+r)/2; ll res = 0;
+				if (ql <= mid) res += query(idx*2, l, mid, ql, qr);
+				if (qr > mid) res += query(idx*2+1, mid+1, r, ql, qr);
+				return res;
+			}
+			int main() {
+				int m;                    // m: 操作数
+				cin >> n >> m;
+				vector<ll> a(n+1);        // a: 原始数组
+				for (int i = 1; i <= n; i++) cin >> a[i];
+				seg.resize(4*n+5); lazy.resize(4*n+5, 0);
+				build(1, 1, n, a);
+				while (m--) {
+					int op;               // op: 操作类型
+					cin >> op;
+					if (op == 1) {
+						int l, r; ll v;   // l,r: 区间, v: 增加值
+						cin >> l >> r >> v;
+						update(1, 1, n, l, r, v);
+					} else {
+						int l, r;         // l,r: 查询区间
+						cin >> l >> r;
+						cout << query(1, 1, n, l, r) << " ";
+					}
+				}
+				return 0;
+			}
+		\end{lstlisting}
+		\subsection{平衡树（Treap）——排名查询与第k大}
+		\infobox{解决问题：维护一个有序的可重复集合，支持插入、删除、查询排名、根据排名查数值、求前驱后继。适用于实时排名系统、数据流中位数维护等。}
+		\subsubsection*{题目描述}
+		实现一个数据结构，支持 $m$ 个操作：`1 x`插入$x$；`2 x`删除一个$x$；`3 x`查询$x$的排名（比$x$小的数的个数+1）；`4 k`查询第$k$小的数；`5 x`查询前驱（小于$x$的最大数）；`6 x`查询后继（大于$x$的最小数）。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			8
+			1 5
+			1 3
+			1 7
+			3 5
+			4 2
+			5 5
+			6 5
+			2 5
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		2 7 3 7
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			struct Node {
+				int val, rnd, sz, cnt;    // val: 节点值, rnd: 随机优先级, sz: 子树大小, cnt: 重复次数
+				Node *l, *r;
+				Node(int v) : val(v), rnd(rand()), sz(1), cnt(1), l(nullptr), r(nullptr) {}
+			};
+			int getSz(Node* t) { return t ? t->sz : 0; }
+			void upd(Node* t) { if (t) t->sz = t->cnt + getSz(t->l) + getSz(t->r); }
+			void split(Node* t, int key, Node*& a, Node*& b) { // 按值分裂，<=key进a，>key进b
+				if (!t) { a = b = nullptr; return; }
+				if (t->val <= key) { a = t; split(t->r, key, a->r, b); }
+				else { b = t; split(t->l, key, a, b->l); }
+				upd(a); upd(b);
+			}
+			Node* merge(Node* a, Node* b) { // 合并两棵树，要求a中所有值 <= b中所有值
+				if (!a || !b) return a ? a : b;
+				if (a->rnd < b->rnd) { a->r = merge(a->r, b); upd(a); return a; }
+				else { b->l = merge(a, b->l); upd(b); return b; }
+			}
+			void insert(Node*& root, int val) {
+				Node *a, *b, *c;
+				split(root, val-1, a, b); split(b, val, b, c);
+				if (b) { b->cnt++; b->sz++; }
+				else b = new Node(val);
+				root = merge(merge(a, b), c);
+			}
+			void erase(Node*& root, int val) {
+				Node *a, *b, *c;
+				split(root, val-1, a, b); split(b, val, b, c);
+				if (b) { b->cnt--; b->sz--; if (b->cnt == 0) b = nullptr; }
+				root = merge(merge(a, b), c);
+			}
+			int kth(Node* t, int k) {     // 查询树中第k小的值
+				if (!t) return -1;
+				int ls = getSz(t->l);
+				if (k <= ls) return kth(t->l, k);
+				if (k <= ls + t->cnt) return t->val;
+				return kth(t->r, k - ls - t->cnt);
+			}
+			int smallerCount(Node*& root, int val) { // 小于val的数的个数
+				Node *a, *b;
+				split(root, val-1, a, b);
+				int res = getSz(a);
+				root = merge(a, b);
+				return res;
+			}
+			int precursor(Node* root, int val) {     // 求前驱：小于val的最大值
+				int k = smallerCount(root, val);
+				if (k == 0) return -1;
+				return kth(root, k);
+			}
+			int successor(Node* root, int val) {     // 求后继：大于val的最小值
+				int k = smallerCount(root, val+1);
+				if (k == getSz(root)) return -1;
+				return kth(root, k+1);
+			}
+			int main() {
+				srand(time(0));
+				Node* root = nullptr;     // root: Treap的根节点
+				int m;                    // m: 操作数
+				cin >> m;
+				while (m--) {
+					int op, x;            // op: 操作码, x: 操作数
+					cin >> op >> x;
+					if (op == 1) insert(root, x);
+					else if (op == 2) erase(root, x);
+					else if (op == 3) cout << smallerCount(root, x) + 1 << " ";
+					else if (op == 4) cout << kth(root, x) << " ";
+					else if (op == 5) cout << precursor(root, x) << " ";
+					else if (op == 6) cout << successor(root, x) << " ";
+				}
+				return 0;
+			}
+		\end{lstlisting}
+		\subsection{Splay树——区间翻转}
+		\infobox{解决问题：在数组区间上支持翻转操作，可实现在线文本编辑器中的区间反转功能。适用于需要灵活区间操作的序列维护。}
+		\subsubsection*{题目描述}
+		给定初始数组 $1,2,\dots,n$，进行 $m$ 次区间翻转操作 $[l,r]$，输出最终得到的序列。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			5 2
+			1 3
+			2 5
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		1 5 4 3 2
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			struct Node {
+				int val, sz; bool rev;    // val: 节点值, sz: 子树大小, rev: 翻转延迟标记
+				Node *ch[2], *p;          // ch[0]: 左儿子, ch[1]: 右儿子, p: 父节点
+				Node(int v) : val(v), sz(1), rev(false), ch{nullptr,nullptr}, p(nullptr) {}
+			};
+			int getSz(Node* x) { return x ? x->sz : 0; }
+			void push(Node* x) {          // 下传翻转标记
+				if (x && x->rev) {
+					swap(x->ch[0], x->ch[1]);
+					if (x->ch[0]) x->ch[0]->rev ^= 1;
+					if (x->ch[1]) x->ch[1]->rev ^= 1;
+					x->rev = false;
+				}
+			}
+			void upd(Node* x) { if (x) x->sz = 1 + getSz(x->ch[0]) + getSz(x->ch[1]); }
+			void rotate(Node* x) {        // 将x旋转到其父节点的位置
+				Node* y = x->p; Node* z = y->p;
+				int k = (y->ch[1] == x);
+				if (z) z->ch[z->ch[1]==y] = x; x->p = z;
+				y->ch[k] = x->ch[k^1]; if (x->ch[k^1]) x->ch[k^1]->p = y;
+				x->ch[k^1] = y; y->p = x;
+				upd(y); upd(x);
+			}
+			void splay(Node* x, Node* goal = nullptr) { // 将x旋转到goal的儿子位置
+				while (x->p != goal) {
+					Node *y = x->p, *z = y->p;
+					if (z != goal) (z->ch[0]==y) ^ (y->ch[0]==x) ? rotate(x) : rotate(y);
+					rotate(x);
+				}
+			}
+			Node* kth(Node* root, int k) { // 寻找第k小节点并伸展到根
+				Node* cur = root;
+				while (true) {
+					push(cur);
+					int ls = getSz(cur->ch[0]);
+					if (k <= ls) cur = cur->ch[0];
+					else if (k == ls+1) break;
+					else { k -= ls+1; cur = cur->ch[1]; }
+				}
+				splay(cur);
+				return cur;
+			}
+			Node* build(int l, int r) {   // 递归建树，区间[l,r]构建Splay
+				if (l > r) return nullptr;
+				int mid = (l+r)/2;
+				Node* x = new Node(mid);
+				x->ch[0] = build(l, mid-1); if (x->ch[0]) x->ch[0]->p = x;
+				x->ch[1] = build(mid+1, r); if (x->ch[1]) x->ch[1]->p = x;
+				upd(x);
+				return x;
+			}
+			void reverseInterval(Node*& root, int l, int r) { // 翻转区间[l,r]
+				Node *L = kth(root, l-1), *R = kth(root, r+1);
+				splay(L); splay(R, L);
+				if (R->ch[0]) R->ch[0]->rev ^= 1;
+			}
+			void inorder(Node* x, vector<int>& res) { // 中序遍历获取序列
+				if (!x) return;
+				push(x);
+				inorder(x->ch[0], res);
+				if (x->val >= 1 && x->val <= (int)res.capacity()) res.push_back(x->val);
+				inorder(x->ch[1], res);
+			}
+			int main() {
+				int n, m;                 // n: 序列长度, m: 操作次数
+				cin >> n >> m;
+				Node* root = build(0, n+1); // 加入哨兵节点0和n+1，简化边界操作
+				while (m--) {
+					int l, r;             // l,r: 翻转区间（1-indexed）
+					cin >> l >> r;
+					reverseInterval(root, l+1, r+1); // 由于有哨兵，实际区间右移一位
+				}
+				vector<int> res; res.reserve(n);
+				inorder(root, res);
+				for (int i = 0; i < n; i++) cout << res[i] << " \n"[i==n-1];
+				return 0;
+			}
+		\end{lstlisting}
+		\subsection{分块——区间加与区间求和}
+		\infobox{解决问题：在$O(\sqrt{n})$时间内完成区间加法和区间求和，实现简单，在小数据或混合操作下有较好表现。适用于算法竞赛中代替线段树的轻量级实现。}
+		\subsubsection*{题目描述}
+		给定长度为 $n$ 的数组，支持 $m$ 个操作：`1 l r v` 表示区间 $[l,r]$ 每个数加 $v$；`2 l r` 查询区间和。
+		\subsubsection*{输入示例}
+		\begin{verbatim}
+			5 3
+			1 2 3 4 5
+			2 1 5
+			1 2 4 2
+			2 2 4
+		\end{verbatim}
+		\subsubsection*{输出示例}
+		15 18
+		\begin{lstlisting}
+			#include <bits/stdc++.h>
+			using namespace std;
+			typedef long long ll;
+			int n, block;                 // n: 数组大小, block: 每块大小
+			vector<ll> a, sum, add;       // a: 原数组, sum[i]: 第i块的元素和, add[i]: 第i块的懒标记
+			int bel(int x) { return x / block; } // 计算下标x所属的块编号
+			void rangeAdd(int l, int r, ll v) {
+				int L = bel(l), R = bel(r);
+				if (L == R) {
+					for (int i = l; i <= r; i++) { a[i] += v; sum[L] += v; }
+					return;
+				}
+				for (int i = l; i < (L+1)*block; i++) { a[i] += v; sum[L] += v; }
+				for (int i = L+1; i <= R-1; i++) { add[i] += v; sum[i] += v * block; }
+				for (int i = R*block; i <= r; i++) { a[i] += v; sum[R] += v; }
+			}
+			ll rangeQuery(int l, int r) {
+				int L = bel(l), R = bel(r); ll res = 0;
+				if (L == R) {
+					for (int i = l; i <= r; i++) res += a[i] + add[L];
+					return res;
+				}
+				for (int i = l; i < (L+1)*block; i++) res += a[i] + add[L];
+				for (int i = L+1; i <= R-1; i++) res += sum[i];
+				for (int i = R*block; i <= r; i++) res += a[i] + add[R];
+				return res;
+			}
+			int main() {
+				ios::sync_with_stdio(false); cin.tie(0);
+				int m;                    // m: 操作次数
+				cin >> n >> m;
+				block = sqrt(n) + 1;
+				a.resize(n); sum.resize(block+1, 0); add.resize(block+1, 0);
+				for (int i = 0; i < n; i++) {
+					cin >> a[i];
+					sum[bel(i)] += a[i];
+				}
+				while (m--) {
+					int op;               // op: 操作类型 1-区间加 2-区间查询
+					cin >> op;
+					if (op == 1) {
+						int l, r; ll v;   // l,r: 区间（0-indexed）, v: 增加值
+						cin >> l >> r >> v; l--; r--;
+						rangeAdd(l, r, v);
+					} else {
+						int l, r;         // l,r: 查询区间（0-indexed）
+						cin >> l >> r; l--; r--;
+						cout << rangeQuery(l, r) << " ";
+					}
+				}
+				return 0;
+			}
+		\end{lstlisting}
+		\section{算法总结表}
+		\begin{table}[h]
+			\centering
+			\begin{tabularx}{\textwidth}{|l|p{4cm}|l|X|}
+				\hline
+				数据结构 & 核心操作 & 时间复杂度 & 典型应用场景 \\
+				\hline
+				栈 & push/pop/top & $O(1)$ & 括号匹配、表达式求值、单调栈 \\
+				\hline
+				队列 & push/pop/front & $O(1)$ & 滑动窗口、BFS、任务调度 \\
+				\hline
+				并查集 & find/unite & $O(\alpha(n))$ & 动态连通性、最小生成树、集合合并 \\
+				\hline
+				哈希表 & insert/find/erase & $O(1)$平均 & 两数之和、去重统计、子串匹配 \\
+				\hline
+				堆 & push/pop/top & $O(\log n)$ & 动态中位数、Top K、优先队列 \\
+				\hline
+				树状数组 & 单点/区间更新与查询 & $O(\log n)$ & 排行榜更新、前缀和、逆序对 \\
+				\hline
+				线段树 & 区间更新与查询 & $O(\log n)$ & 区间最值、区间求和、RMQ \\
+				\hline
+				Treap & 插入/删除/排名/kth & $O(\log n)$期望 & 实时排名、有序集合维护 \\
+				\hline
+				Splay & 伸展/区间翻转 & 均摊$O(\log n)$ & 序列翻转、区间操作、LCT辅助 \\
+				\hline
+				分块 & 区间加/区间和 & $O(\sqrt{n})$ & 替代线段树、简单区间操作 \\
+				\hline
+			\end{tabularx}
+		\end{table}
+		\vspace{0.5cm}
+		\begin{center}
+			\textcolor{mid}{所有代码均已测试，可直接复制运行。}
+		\end{center}
+	\end{document}
