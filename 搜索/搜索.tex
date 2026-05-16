@@ -1,0 +1,1547 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{float}
+
+\geometry{margin=2.5cm}
+
+% 定义颜色
+\definecolor{lightgray}{RGB}{240,240,240}
+\definecolor{myblue}{RGB}{70,130,180}
+\definecolor{mygreen}{RGB}{34,139,34}
+\definecolor{myred}{RGB}{220,20,60}
+\definecolor{myorange}{RGB}{255,140,0}
+\definecolor{myyellow}{RGB}{218,165,32}
+\definecolor{mypurple}{RGB}{128,0,128}
+
+% C++ 代码高亮设置
+\lstset{
+	language=C++,
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{myblue}\bfseries,
+	commentstyle=\color{gray},
+	stringstyle=\color{teal},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	stepnumber=1,
+	numbersep=5pt,
+	backgroundcolor=\color{lightgray!30},
+	frame=single,
+	breaklines=true,
+	breakatwhitespace=false,
+	tabsize=4,
+	showspaces=false,
+	showstringspaces=false,
+	showtabs=false,
+	captionpos=b,
+	morekeywords={long long, vector, pair, unordered\_map, unordered\_set, queue, priority\_queue, stack}
+}
+
+% 自定义盒子环境
+\newtcolorbox{bluebox}{
+	colback=myblue!10!white,
+	colframe=myblue!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\newtcolorbox{greenbox}{
+	colback=mygreen!10!white,
+	colframe=mygreen!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\newtcolorbox{redbox}{
+	colback=myred!10!white,
+	colframe=myred!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\newtcolorbox{orangebox}{
+	colback=myorange!10!white,
+	colframe=myorange!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\newtcolorbox{yellowbox}{
+	colback=myyellow!10!white,
+	colframe=myyellow!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\newtcolorbox{purplebox}{
+	colback=mypurple!10!white,
+	colframe=mypurple!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\title{\Huge \textbf{BFS与DFS搜索算法完全指南}}
+\author{算法学习笔记}
+\date{\today}
+
+\begin{document}
+	
+	\maketitle
+	
+	\tableofcontents
+	\newpage
+	
+	\section{搜索算法基础概念}
+	
+	\subsection{什么是搜索算法？}
+	
+	搜索算法是计算机科学中最基础、最重要的算法之一。它用于在数据集合中查找特定信息或遍历整个数据结构。
+	
+	\begin{bluebox}
+		\textbf{搜索算法的本质}
+		
+		搜索算法的核心是\textbf{状态空间探索}：
+		\begin{itemize}
+			\item 每个问题可以看作一个\textbf{状态图}
+			\item 图中的节点代表\textbf{状态}
+			\item 图中的边代表\textbf{状态转移}
+			\item 搜索算法就是在这个图中找到从初始状态到目标状态的路径
+		\end{itemize}
+	\end{bluebox}
+	
+	\subsection{两种核心搜索策略}
+	
+	\begin{yellowbox}
+		\textbf{DFS vs BFS 形象对比}
+		
+		\begin{itemize}
+			\item \textbf{DFS（深度优先搜索）}：像走迷宫，一条路走到黑，走不通再回头
+			\begin{itemize}
+				\item 比喻：一个人探索迷宫，一直往前走直到无路可走，然后返回上一个岔路口
+			\end{itemize}
+			\item \textbf{BFS（广度优先搜索）}：像水波扩散，一层一层向外扩展
+			\begin{itemize}
+				\item 比喻：一群人同时从起点出发，每一步所有的人都向外走一步
+			\end{itemize}
+		\end{itemize}
+	\end{yellowbox}
+	
+	\subsection{时间复杂度与空间复杂度对比}
+	
+	\begin{center}
+		\begin{tabular}{|c|c|c|c|}
+			\hline
+			\textbf{算法} & \textbf{时间复杂度} & \textbf{空间复杂度} & \textbf{数据结构} \\
+			\hline
+			DFS & $O(V + E)$ & $O(h)$ 递归栈深度 & 栈(Stack) \\
+			\hline
+			BFS & $O(V + E)$ & $O(w)$ 最大层宽度 & 队列(Queue) \\
+			\hline
+		\end{tabular}
+	\end{center}
+	
+	其中 $V$ 是顶点数，$E$ 是边数，$h$ 是最大深度，$w$ 是最大宽度。
+	
+	\section{深度优先搜索（DFS）}
+	
+	\subsection{DFS的核心思想}
+	
+	DFS遵循"深入优先"的原则，尽可能深地搜索树或图的分支。
+	
+	\begin{greenbox}
+		\textbf{DFS的三个关键步骤}
+		
+		\begin{enumerate}
+			\item \textbf{选择}：从当前节点选择一个未访问的邻接节点
+			\item \textbf{深入}：移动到该节点，继续深入探索
+			\item \textbf{回溯}：当无路可走时，返回上一个节点，尝试其他分支
+		\end{enumerate}
+	\end{greenbox}
+	
+	\subsection{DFS的两种实现方式}
+	
+	\subsubsection{递归实现（最常用）}
+	
+	递归实现DFS是最自然的方式，利用系统栈来保存状态。
+	
+	\begin{lstlisting}[caption={DFS递归实现 - 图的遍历}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		const int MAXN = 100005;
+		vector<int> graph[MAXN];  // 邻接表存图
+		bool visited[MAXN];       // 标记节点是否访问过
+		
+		// DFS递归实现
+		void dfs(int u) {
+			// 1. 处理当前节点
+			visited[u] = true;
+			cout << "访问节点: " << u << endl;
+			
+			// 2. 遍历所有邻接节点
+			for (int v : graph[u]) {
+				// 3. 如果未访问，深入探索
+				if (!visited[v]) {
+					dfs(v);  // 递归深入
+				}
+			}
+			// 4. 回溯（自动发生，递归返回即回溯）
+		}
+		
+		// 使用示例
+		int main() {
+			int n, m;  // n个节点，m条边
+			cin >> n >> m;
+			
+			// 建图
+			for (int i = 0; i < m; i++) {
+				int u, v;
+				cin >> u >> v;
+				graph[u].push_back(v);
+				graph[v].push_back(u);  // 无向图
+			}
+			
+			// 从节点1开始DFS
+			dfs(1);
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsubsection{迭代实现（使用栈）}
+	
+	使用显式栈来模拟递归过程，避免递归深度过大导致栈溢出。
+	
+	\begin{lstlisting}[caption={DFS迭代实现 - 使用栈}]
+		#include <iostream>
+		#include <vector>
+		#include <stack>
+		using namespace std;
+		
+		const int MAXN = 100005;
+		vector<int> graph[MAXN];
+		bool visited[MAXN];
+		
+		// DFS迭代实现
+		void dfs_iterative(int start) {
+			stack<int> stk;
+			stk.push(start);
+			
+			while (!stk.empty()) {
+				int u = stk.top();
+				stk.pop();
+				
+				// 可能在栈中有重复节点，需要再次检查
+				if (visited[u]) continue;
+				
+				visited[u] = true;
+				cout << "访问节点: " << u << endl;
+				
+				// 将所有未访问的邻接节点入栈
+				for (int v : graph[u]) {
+					if (!visited[v]) {
+						stk.push(v);
+					}
+				}
+			}
+		}
+		
+		int main() {
+			int n = 5;
+			graph[1] = {2, 3};
+			graph[2] = {1, 4, 5};
+			graph[3] = {1};
+			graph[4] = {2};
+			graph[5] = {2};
+			
+			dfs_iterative(1);
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{DFS的应用场景}
+	
+	\begin{bluebox}
+		\textbf{DFS的典型应用}
+		
+		\begin{enumerate}
+			\item \textbf{连通性问题}：判断图的连通分量数量
+			\item \textbf{路径搜索}：查找从起点到终点的所有路径
+			\item \textbf{拓扑排序}：有向无环图的线性排序
+			\item \textbf{环检测}：判断图中是否存在环
+			\item \textbf{回溯算法}：排列、组合、子集等问题
+			\item \textbf{树的遍历}：前序、中序、后序遍历
+		\end{enumerate}
+	\end{bluebox}
+	
+	\subsection{DFS经典问题：全排列}
+	
+	\begin{lstlisting}[caption={DFS回溯 - 全排列问题}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		vector<int> path;           // 当前路径（当前排列）
+		vector<bool> used;          // 标记数字是否使用过
+		vector<vector<int>> result; // 存储所有结果
+		
+		// 生成1~n的所有排列
+		void backtrack(int n) {
+			// 终止条件：路径长度等于n，得到一个完整排列
+			if (path.size() == n) {
+				result.push_back(path);
+				// 打印排列
+				for (int num : path) {
+					cout << num << " ";
+				}
+				cout << endl;
+				return;
+			}
+			
+			// 尝试每个数字
+			for (int i = 1; i <= n; i++) {
+				if (!used[i]) {
+					// 选择
+					used[i] = true;
+					path.push_back(i);
+					
+					// 深入
+					backtrack(n);
+					
+					// 回溯（撤销选择）
+					path.pop_back();
+					used[i] = false;
+				}
+			}
+		}
+		
+		int main() {
+			int n = 3;
+			used.resize(n + 1, false);
+			
+			cout << "1~3的所有排列:" << endl;
+			backtrack(n);
+			
+			return 0;
+		}
+		/* 输出:
+		1 2 3
+		1 3 2
+		2 1 3
+		2 3 1
+		3 1 2
+		3 2 1
+		*/
+	\end{lstlisting}
+	
+	\section{广度优先搜索（BFS）}
+	
+	\subsection{BFS的核心思想}
+	
+	BFS遵循"广度优先"的原则，逐层访问节点。
+	
+	\begin{greenbox}
+		\textbf{BFS的关键特征}
+		
+		\begin{enumerate}
+			\item \textbf{层次性}：按照距离起点的层数逐层访问
+			\item \textbf{最短路径}：在无权图中能找到最短路径
+			\item \textbf{队列实现}：使用队列保证先进先出的顺序
+			\item \textbf{非递归}：天然适合迭代实现
+		\end{enumerate}
+	\end{greenbox}
+	
+	\subsection{BFS的标准模板}
+	
+	\begin{lstlisting}[caption={BFS标准模板 - 图的层序遍历}]
+		#include <iostream>
+		#include <vector>
+		#include <queue>
+		using namespace std;
+		
+		const int MAXN = 100005;
+		vector<int> graph[MAXN];
+		bool visited[MAXN];
+		int dist[MAXN];  // 记录从起点到每个节点的距离
+		
+		// BFS实现
+		void bfs(int start) {
+			queue<int> q;
+			
+			// 1. 将起点入队
+			q.push(start);
+			visited[start] = true;
+			dist[start] = 0;
+			
+			// 2. 开始BFS
+			while (!q.empty()) {
+				int u = q.front();
+				q.pop();
+				
+				cout << "访问节点: " << u 
+				<< ", 距离: " << dist[u] << endl;
+				
+				// 3. 遍历所有邻接节点
+				for (int v : graph[u]) {
+					if (!visited[v]) {
+						// 4. 未访问的节点入队
+						visited[v] = true;
+						dist[v] = dist[u] + 1;  // 更新距离
+						q.push(v);
+					}
+				}
+			}
+		}
+		
+		int main() {
+			int n = 5;
+			graph[1] = {2, 3};
+			graph[2] = {1, 4, 5};
+			graph[3] = {1};
+			graph[4] = {2};
+			graph[5] = {2};
+			
+			cout << "BFS从节点1开始:" << endl;
+			bfs(1);
+			
+			return 0;
+		}
+		/* 输出:
+		访问节点: 1, 距离: 0
+		访问节点: 2, 距离: 1
+		访问节点: 3, 距离: 1
+		访问节点: 4, 距离: 2
+		访问节点: 5, 距离: 2
+		*/
+	\end{lstlisting}
+	
+	\subsection{BFS的应用场景}
+	
+	\begin{bluebox}
+		\textbf{BFS的典型应用}
+		
+		\begin{enumerate}
+			\item \textbf{最短路径}：无权图中求最短路径
+			\item \textbf{层次遍历}：树的层序遍历
+			\item \textbf{连通分量}：统计连通块数量
+			\item \textbf{迷宫问题}：找最短逃生路径
+			\item \textbf{单词接龙}：词语变换的最短序列
+			\item \textbf{社交网络}：计算好友关系的度数
+		\end{enumerate}
+	\end{bluebox}
+	
+	\subsection{BFS经典问题：迷宫最短路径}
+	
+	\begin{lstlisting}[caption={BFS - 迷宫最短路径}]
+		#include <iostream>
+		#include <vector>
+		#include <queue>
+		using namespace std;
+		
+		struct Node {
+			int x, y;      // 坐标
+			int steps;     // 从起点到这里的步数
+		};
+		
+		// 四个方向：上、下、左、右
+		int dx[] = {-1, 1, 0, 0};
+		int dy[] = {0, 0, -1, 1};
+		
+		int shortestPath(vector<vector<int>>& maze, 
+		int startX, int startY, 
+		int endX, int endY) {
+			int n = maze.size();
+			int m = maze[0].size();
+			
+			vector<vector<bool>> visited(n, vector<bool>(m, false));
+			queue<Node> q;
+			
+			// 起点入队
+			q.push({startX, startY, 0});
+			visited[startX][startY] = true;
+			
+			while (!q.empty()) {
+				Node cur = q.front();
+				q.pop();
+				
+				// 到达终点
+				if (cur.x == endX && cur.y == endY) {
+					return cur.steps;
+				}
+				
+				// 尝试四个方向
+				for (int i = 0; i < 4; i++) {
+					int nx = cur.x + dx[i];
+					int ny = cur.y + dy[i];
+					
+					// 检查边界和障碍
+					if (nx >= 0 && nx < n && ny >= 0 && ny < m 
+					&& maze[nx][ny] == 0 && !visited[nx][ny]) {
+						visited[nx][ny] = true;
+						q.push({nx, ny, cur.steps + 1});
+					}
+				}
+			}
+			
+			return -1;  // 无法到达
+		}
+		
+		int main() {
+			// 0表示通路，1表示障碍
+			vector<vector<int>> maze = {
+				{0, 0, 0, 0},
+				{0, 1, 0, 0},
+				{0, 1, 0, 1},
+				{0, 0, 0, 0}
+			};
+			
+			int steps = shortestPath(maze, 0, 0, 3, 3);
+			cout << "最短路径步数: " << steps << endl;
+			// 输出: 6
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\section{DFS与BFS的选择策略}
+	
+	\begin{orangebox}
+		\textbf{如何选择DFS还是BFS？}
+		
+		\begin{center}
+			\begin{tabular}{|c|c|c|}
+				\hline
+				\textbf{问题特征} & \textbf{推荐算法} & \textbf{原因} \\
+				\hline
+				求最短路径/最少步数 & BFS & 逐层扩展，首次到达即最短 \\
+				\hline
+				求所有可能解/路径 & DFS & 回溯机制天然适合枚举 \\
+				\hline
+				树/图很深 & BFS & 避免递归栈溢出 \\
+				\hline
+				树/图很宽 & DFS & BFS队列会占用大量空间 \\
+				\hline
+				检测连通性 & 都可以 & 性能相近 \\
+				\hline
+				拓扑排序 & DFS & 容易实现 \\
+				\hline
+				状态空间很大 & DFS+剪枝 & 内存占用小 \\
+				\hline
+			\end{tabular}
+		\end{center}
+	\end{orangebox}
+	
+	\section{经典例题详解}
+	
+	\subsection{例题1：岛屿数量（基础DFS/BFS）}
+	
+	\textbf{题目描述：}给定一个由 '1'（陆地）和 '0'（水）组成的二维网格，计算网格中岛屿的数量。岛屿总是被水包围，并且每座岛屿只能由水平方向或竖直方向上相邻的陆地连接形成。
+	
+	\begin{lstlisting}[caption={例题1：岛屿数量 - DFS解法}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		// DFS淹没岛屿
+		void dfs(vector<vector<char>>& grid, int i, int j) {
+			int n = grid.size();
+			int m = grid[0].size();
+			
+			// 边界检查
+			if (i < 0 || i >= n || j < 0 || j >= m || grid[i][j] == '0') {
+				return;
+			}
+			
+			// 将当前陆地标记为水（淹没）
+			grid[i][j] = '0';
+			
+			// 向四个方向扩展
+			dfs(grid, i - 1, j);  // 上
+			dfs(grid, i + 1, j);  // 下
+			dfs(grid, i, j - 1);  // 左
+			dfs(grid, i, j + 1);  // 右
+		}
+		
+		int numIslands(vector<vector<char>>& grid) {
+			if (grid.empty()) return 0;
+			
+			int n = grid.size();
+			int m = grid[0].size();
+			int count = 0;
+			
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j < m; j++) {
+					if (grid[i][j] == '1') {
+						count++;  // 发现新岛屿
+						dfs(grid, i, j);  // 淹没整个岛屿
+					}
+				}
+			}
+			
+			return count;
+		}
+		
+		int main() {
+			vector<vector<char>> grid = {
+				{'1', '1', '0', '0', '0'},
+				{'1', '1', '0', '0', '0'},
+				{'0', '0', '1', '0', '0'},
+				{'0', '0', '0', '1', '1'}
+			};
+			
+			cout << "岛屿数量: " << numIslands(grid) << endl;
+			// 输出: 3
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{例题2：岛屿数量 - BFS解法}
+	
+	\begin{lstlisting}[caption={例题1变体：岛屿数量 - BFS解法}]
+		#include <iostream>
+		#include <vector>
+		#include <queue>
+		using namespace std;
+		
+		int numIslandsBFS(vector<vector<char>>& grid) {
+			if (grid.empty()) return 0;
+			
+			int n = grid.size();
+			int m = grid[0].size();
+			int count = 0;
+			
+			int dx[] = {-1, 1, 0, 0};
+			int dy[] = {0, 0, -1, 1};
+			
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j < m; j++) {
+					if (grid[i][j] == '1') {
+						count++;
+						
+						// BFS淹没岛屿
+						queue<pair<int, int>> q;
+						q.push({i, j});
+						grid[i][j] = '0';
+						
+						while (!q.empty()) {
+							auto [x, y] = q.front();
+							q.pop();
+							
+							for (int k = 0; k < 4; k++) {
+								int nx = x + dx[k];
+								int ny = y + dy[k];
+								
+								if (nx >= 0 && nx < n && ny >= 0 && ny < m 
+								&& grid[nx][ny] == '1') {
+									grid[nx][ny] = '0';
+									q.push({nx, ny});
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			return count;
+		}
+	\end{lstlisting}
+	
+	\subsection{例题3：单词接龙（BFS求最短路径）}
+	
+	\textbf{题目描述：}给定两个单词（beginWord和endWord）和一个字典，找到从beginWord到endWord的最短转换序列的长度。每次转换只能改变一个字母，且转换后的单词必须在字典中。
+	
+	\begin{lstlisting}[caption={例题3：单词接龙 - BFS}]
+		#include <iostream>
+		#include <vector>
+		#include <queue>
+		#include <unordered_set>
+		#include <unordered_map>
+		using namespace std;
+		
+		int ladderLength(string beginWord, string endWord, 
+		vector<string>& wordList) {
+			// 将字典转换为集合，方便查找
+			unordered_set<string> wordSet(wordList.begin(), wordList.end());
+			
+			// 如果终点不在字典中，无法转换
+			if (wordSet.find(endWord) == wordSet.end()) {
+				return 0;
+			}
+			
+			// BFS
+			queue<string> q;
+			q.push(beginWord);
+			
+			int steps = 1;  // 包含起始单词
+			
+			while (!q.empty()) {
+				int size = q.size();
+				
+				// 处理当前层的所有节点
+				for (int i = 0; i < size; i++) {
+					string word = q.front();
+					q.pop();
+					
+					// 尝试改变每个位置的字母
+					for (int j = 0; j < word.length(); j++) {
+						char original = word[j];
+						
+						// 尝试26个字母
+						for (char c = 'a'; c <= 'z'; c++) {
+							word[j] = c;
+							
+							// 找到终点
+							if (word == endWord) {
+								return steps + 1;
+							}
+							
+							// 如果在字典中，加入队列继续搜索
+							if (wordSet.find(word) != wordSet.end()) {
+								q.push(word);
+								wordSet.erase(word);  // 删除防止重复访问
+							}
+						}
+						
+						// 恢复原字母
+						word[j] = original;
+					}
+				}
+				
+				steps++;  // 层数增加
+			}
+			
+			return 0;  // 无法转换
+		}
+		
+		int main() {
+			string beginWord = "hit";
+			string endWord = "cog";
+			vector<string> wordList = {"hot", "dot", "dog", "lot", "log", "cog"};
+			
+			int result = ladderLength(beginWord, endWord, wordList);
+			cout << "最短转换序列长度: " << result << endl;
+			// 输出: 5 (hit -> hot -> dot -> dog -> cog)
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{例题4：课程表（拓扑排序 - DFS）}
+	
+	\textbf{题目描述：}现在你总共有n门课需要选，记为0到n-1。在选修某些课程之前需要先修其他课程。给定课程总量和先决条件，判断是否可能完成所有课程的学习。
+	
+	\begin{lstlisting}[caption={例题4：课程表 - DFS检测环}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		// 课程表问题 - DFS检测环
+		bool hasCycle(int course, vector<vector<int>>& graph, 
+		vector<int>& visited) {
+			// 1: 正在访问（在当前DFS路径中）
+			// 2: 已经访问完成
+			if (visited[course] == 1) return true;   // 发现环
+			if (visited[course] == 2) return false;  // 已经处理过
+			
+			visited[course] = 1;  // 标记为正在访问
+			
+			// 访问所有后继课程
+			for (int next : graph[course]) {
+				if (hasCycle(next, graph, visited)) {
+					return true;
+				}
+			}
+			
+			visited[course] = 2;  // 标记为访问完成
+			return false;
+		}
+		
+		bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
+			// 构建图
+			vector<vector<int>> graph(numCourses);
+			for (auto& pre : prerequisites) {
+				graph[pre[1]].push_back(pre[0]);
+			}
+			
+			// 访问状态：0=未访问, 1=访问中, 2=已访问
+			vector<int> visited(numCourses, 0);
+			
+			// 对每个节点进行DFS
+			for (int i = 0; i < numCourses; i++) {
+				if (visited[i] == 0) {
+					if (hasCycle(i, graph, visited)) {
+						return false;  // 有环，无法完成
+					}
+				}
+			}
+			
+			return true;  // 无环，可以完成
+		}
+		
+		int main() {
+			int n = 4;
+			vector<vector<int>> prerequisites = {{1, 0}, {2, 0}, {3, 1}, {3, 2}};
+			
+			cout << "能否完成所有课程: " 
+			<< (canFinish(n, prerequisites) ? "是" : "否") << endl;
+			// 输出: 是
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{例题5：课程表 - BFS拓扑排序}
+	
+	\begin{lstlisting}[caption={例题4变体：课程表 - BFS拓扑排序}]
+		#include <iostream>
+		#include <vector>
+		#include <queue>
+		using namespace std;
+		
+		bool canFinishBFS(int numCourses, vector<vector<int>>& prerequisites) {
+			// 构建图和入度数组
+			vector<vector<int>> graph(numCourses);
+			vector<int> inDegree(numCourses, 0);
+			
+			for (auto& pre : prerequisites) {
+				graph[pre[1]].push_back(pre[0]);
+				inDegree[pre[0]]++;
+			}
+			
+			// 将所有入度为0的节点入队
+			queue<int> q;
+			for (int i = 0; i < numCourses; i++) {
+				if (inDegree[i] == 0) {
+					q.push(i);
+				}
+			}
+			
+			int count = 0;  // 可以完成的课程数
+			
+			// BFS拓扑排序
+			while (!q.empty()) {
+				int course = q.front();
+				q.pop();
+				count++;
+				
+				// 减少所有后继课程的入度
+				for (int next : graph[course]) {
+					inDegree[next]--;
+					if (inDegree[next] == 0) {
+						q.push(next);
+					}
+				}
+			}
+			
+			return count == numCourses;  // 所有课程都完成了
+		}
+	\end{lstlisting}
+	
+	\section{进阶题目详解}
+	
+	\subsection{进阶题1：被围绕的区域（DFS/BFS）}
+	
+	\textbf{题目描述：}给定一个二维矩阵，包含'X'和'O'。找到所有被'X'围绕的区域，并将这些区域里所有的'O'用'X'填充。边界上的'O'不会被填充。
+	
+	\textbf{解题思路：}
+	\begin{itemize}
+		\item 核心思想：反过来思考，找到不被包围的'O'（边界上的'O'及其连通的'O'）
+		\item 从边界开始DFS/BFS，标记所有与边界连通的'O'
+		\item 未被标记的'O'就是被包围的，改为'X'
+	\end{itemize}
+	
+	\begin{lstlisting}[caption={进阶题1：被围绕的区域}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		void dfs(vector<vector<char>>& board, int i, int j) {
+			int n = board.size();
+			int m = board[0].size();
+			
+			if (i < 0 || i >= n || j < 0 || j >= m || board[i][j] != 'O') {
+				return;
+			}
+			
+			// 标记为临时字符，表示不被包围
+			board[i][j] = '#';
+			
+			dfs(board, i - 1, j);
+			dfs(board, i + 1, j);
+			dfs(board, i, j - 1);
+			dfs(board, i, j + 1);
+		}
+		
+		void solve(vector<vector<char>>& board) {
+			if (board.empty()) return;
+			
+			int n = board.size();
+			int m = board[0].size();
+			
+			// 处理四条边界
+			for (int i = 0; i < n; i++) {
+				dfs(board, i, 0);      // 左边界
+				dfs(board, i, m - 1);  // 右边界
+			}
+			
+			for (int j = 0; j < m; j++) {
+				dfs(board, 0, j);      // 上边界
+				dfs(board, n - 1, j);  // 下边界
+			}
+			
+			// 转换
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j < m; j++) {
+					if (board[i][j] == 'O') {
+						board[i][j] = 'X';  // 被包围的改为X
+					} else if (board[i][j] == '#') {
+						board[i][j] = 'O';  // 不被包围的恢复
+					}
+				}
+			}
+		}
+		
+		int main() {
+			vector<vector<char>> board = {
+				{'X', 'X', 'X', 'X'},
+				{'X', 'O', 'O', 'X'},
+				{'X', 'X', 'O', 'X'},
+				{'X', 'O', 'X', 'X'}
+			};
+			
+			solve(board);
+			
+			cout << "处理后的矩阵:" << endl;
+			for (auto& row : board) {
+				for (char c : row) {
+					cout << c << " ";
+				}
+				cout << endl;
+			}
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{进阶题2：扫雷游戏（BFS + 模拟）}
+	
+	\textbf{题目描述：}给定一个代表游戏面板的二维字符矩阵，点击一个位置，根据扫雷规则揭示该位置。
+	
+	\textbf{解题思路：}
+	\begin{itemize}
+		\item 如果点击到地雷（M），直接改为X并结束
+		\item 如果点击到空格（E），用BFS/DFS展开：
+		\begin{itemize}
+			\item 计算周围地雷数量
+			\item 如果有地雷，显示数字
+			\item 如果没地雷，显示B，并递归展开周围8个格子
+		\end{itemize}
+	\end{itemize}
+	
+	\begin{lstlisting}[caption={进阶题2：扫雷游戏}]
+		#include <iostream>
+		#include <vector>
+		#include <queue>
+		using namespace std;
+		
+		vector<vector<char>> updateBoard(vector<vector<char>>& board, 
+		vector<int>& click) {
+			int n = board.size();
+			int m = board[0].size();
+			int x = click[0], y = click[1];
+			
+			// 点击到地雷
+			if (board[x][y] == 'M') {
+				board[x][y] = 'X';
+				return board;
+			}
+			
+			// 8个方向
+			int dx[] = {-1, -1, -1, 0, 0, 1, 1, 1};
+			int dy[] = {-1, 0, 1, -1, 1, -1, 0, 1};
+			
+			// BFS
+			queue<pair<int, int>> q;
+			q.push({x, y});
+			
+			// 标记已处理，避免重复入队
+			vector<vector<bool>> inQueue(n, vector<bool>(m, false));
+			inQueue[x][y] = true;
+			
+			while (!q.empty()) {
+				auto [cx, cy] = q.front();
+				q.pop();
+				
+				// 计算周围地雷数量
+				int mines = 0;
+				vector<pair<int, int>> neighbors;
+				
+				for (int i = 0; i < 8; i++) {
+					int nx = cx + dx[i];
+					int ny = cy + dy[i];
+					
+					if (nx >= 0 && nx < n && ny >= 0 && ny < m) {
+						if (board[nx][ny] == 'M') {
+							mines++;
+						} else if (!inQueue[nx][ny]) {
+							neighbors.push_back({nx, ny});
+						}
+					}
+				}
+				
+				if (mines > 0) {
+					// 有地雷，显示数字
+					board[cx][cy] = '0' + mines;
+				} else {
+					// 没有地雷，递归展开
+					board[cx][cy] = 'B';
+					for (auto [nx, ny] : neighbors) {
+						q.push({nx, ny});
+						inQueue[nx][ny] = true;
+					}
+				}
+			}
+			
+			return board;
+		}
+		
+		int main() {
+			vector<vector<char>> board = {
+				{'E', 'E', 'E', 'E', 'E'},
+				{'E', 'E', 'M', 'E', 'E'},
+				{'E', 'E', 'E', 'E', 'E'},
+				{'E', 'E', 'E', 'E', 'E'}
+			};
+			vector<int> click = {3, 0};
+			
+			auto result = updateBoard(board, click);
+			
+			cout << "扫雷结果:" << endl;
+			for (auto& row : result) {
+				for (char c : row) {
+					cout << c << " ";
+				}
+				cout << endl;
+			}
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{进阶题3：太平洋大西洋水流问题}
+	
+	\textbf{题目描述：}给定一个m x n的非负整数矩阵表示地形高度。水可以从高处向低处流。求所有同时能流向太平洋和大西洋的坐标。太平洋在左边界和上边界，大西洋在右边界和下边界。
+	
+	\begin{lstlisting}[caption={进阶题3：太平洋大西洋水流问题}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		void dfs(vector<vector<int>>& heights, vector<vector<bool>>& ocean,
+		int i, int j, int prevHeight) {
+			int n = heights.size();
+			int m = heights[0].size();
+			
+			// 检查边界和高度条件
+			if (i < 0 || i >= n || j < 0 || j >= m 
+			|| ocean[i][j] || heights[i][j] < prevHeight) {
+				return;
+			}
+			
+			// 标记为可达
+			ocean[i][j] = true;
+			
+			// 向四个方向流动（注意：水从低往高流是反过来的）
+			dfs(heights, ocean, i - 1, j, heights[i][j]);
+			dfs(heights, ocean, i + 1, j, heights[i][j]);
+			dfs(heights, ocean, i, j - 1, heights[i][j]);
+			dfs(heights, ocean, i, j + 1, heights[i][j]);
+		}
+		
+		vector<vector<int>> pacificAtlantic(vector<vector<int>>& heights) {
+			if (heights.empty()) return {};
+			
+			int n = heights.size();
+			int m = heights[0].size();
+			
+			vector<vector<bool>> pacific(n, vector<bool>(m, false));
+			vector<vector<bool>> atlantic(n, vector<bool>(m, false));
+			
+			// 从太平洋边界开始DFS（左边界和上边界）
+			for (int i = 0; i < n; i++) {
+				dfs(heights, pacific, i, 0, INT_MIN);
+			}
+			for (int j = 0; j < m; j++) {
+				dfs(heights, pacific, 0, j, INT_MIN);
+			}
+			
+			// 从大西洋边界开始DFS（右边界和下边界）
+			for (int i = 0; i < n; i++) {
+				dfs(heights, atlantic, i, m - 1, INT_MIN);
+			}
+			for (int j = 0; j < m; j++) {
+				dfs(heights, atlantic, n - 1, j, INT_MIN);
+			}
+			
+			// 收集同时能流向两大洋的点
+			vector<vector<int>> result;
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j < m; j++) {
+					if (pacific[i][j] && atlantic[i][j]) {
+						result.push_back({i, j});
+					}
+				}
+			}
+			
+			return result;
+		}
+		
+		int main() {
+			vector<vector<int>> heights = {
+				{1, 2, 2, 3, 5},
+				{3, 2, 3, 4, 4},
+				{2, 4, 5, 3, 1},
+				{6, 7, 1, 4, 5},
+				{5, 1, 1, 2, 4}
+			};
+			
+			auto result = pacificAtlantic(heights);
+			
+			cout << "同时能流向太平洋和大西洋的坐标:" << endl;
+			for (auto& pos : result) {
+				cout << "(" << pos[0] << "," << pos[1] << ") ";
+			}
+			cout << endl;
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{进阶题4：最短路径访问所有节点（状态压缩BFS）}
+	
+	\textbf{题目描述：}存在一个由n个节点组成的无向连通图，节点编号从0到n-1。找出最短的路径，使得从任意节点出发，访问完所有节点。可以以任意节点作为起点，任意节点作为终点，可以多次访问节点和重复经过边。
+	
+	\begin{lstlisting}[caption={进阶题4：最短路径访问所有节点 - BFS+状态压缩}]
+		#include <iostream>
+		#include <vector>
+		#include <queue>
+		#include <tuple>
+		using namespace std;
+		
+		int shortestPathLength(vector<vector<int>>& graph) {
+			int n = graph.size();
+			
+			// BFS队列：(当前节点, 访问状态, 路径长度)
+			queue<tuple<int, int, int>> q;
+			
+			// visited[node][state] 防止重复访问
+			vector<vector<bool>> visited(n, vector<bool>(1 << n, false));
+			
+			// 可以从任意节点开始
+			for (int i = 0; i < n; i++) {
+				int state = 1 << i;
+				q.push({i, state, 0});
+				visited[i][state] = true;
+			}
+			
+			int target = (1 << n) - 1;  // 所有节点都访问过的状态
+			
+			while (!q.empty()) {
+				auto [node, state, dist] = q.front();
+				q.pop();
+				
+				// 所有节点都访问了
+				if (state == target) {
+					return dist;
+				}
+				
+				// 访问相邻节点
+				for (int next : graph[node]) {
+					int newState = state | (1 << next);
+					
+					if (!visited[next][newState]) {
+						visited[next][newState] = true;
+						q.push({next, newState, dist + 1});
+					}
+				}
+			}
+			
+			return -1;  // 不应该到达这里
+		}
+		
+		int main() {
+			vector<vector<int>> graph = {
+				{1, 2, 3},
+				{0},
+				{0},
+				{0}
+			};
+			
+			cout << "最短路径长度: " << shortestPathLength(graph) << endl;
+			// 输出: 4
+			
+			graph = {{1}, {0, 2, 4}, {1, 3, 4}, {2}, {1, 2}};
+			cout << "最短路径长度: " << shortestPathLength(graph) << endl;
+			// 输出: 4
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{进阶题5：01矩阵（多源BFS）}
+	
+	\textbf{题目描述：}给定一个由0和1组成的矩阵，找出每个元素到最近的0的距离。
+	
+	\begin{lstlisting}[caption={进阶题5：01矩阵 - 多源BFS}]
+		#include <iostream>
+		#include <vector>
+		#include <queue>
+		using namespace std;
+		
+		vector<vector<int>> updateMatrix(vector<vector<int>>& mat) {
+			int n = mat.size();
+			int m = mat[0].size();
+			
+			vector<vector<int>> dist(n, vector<int>(m, INT_MAX));
+			queue<pair<int, int>> q;
+			
+			// 将所有0入队（多源BFS）
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j < m; j++) {
+					if (mat[i][j] == 0) {
+						dist[i][j] = 0;
+						q.push({i, j});
+					}
+				}
+			}
+			
+			int dx[] = {-1, 1, 0, 0};
+			int dy[] = {0, 0, -1, 1};
+			
+			// BFS
+			while (!q.empty()) {
+				auto [x, y] = q.front();
+				q.pop();
+				
+				for (int k = 0; k < 4; k++) {
+					int nx = x + dx[k];
+					int ny = y + dy[k];
+					
+					if (nx >= 0 && nx < n && ny >= 0 && ny < m 
+					&& dist[nx][ny] > dist[x][y] + 1) {
+						dist[nx][ny] = dist[x][y] + 1;
+						q.push({nx, ny});
+					}
+				}
+			}
+			
+			return dist;
+		}
+		
+		int main() {
+			vector<vector<int>> mat = {
+				{0, 0, 0},
+				{0, 1, 0},
+				{1, 1, 1}
+			};
+			
+			auto result = updateMatrix(mat);
+			
+			cout << "到最近0的距离:" << endl;
+			for (auto& row : result) {
+				for (int d : row) {
+					cout << d << " ";
+				}
+				cout << endl;
+			}
+			// 输出:
+			// 0 0 0
+			// 0 1 0
+			// 1 2 1
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\section{搜索算法的优化技巧}
+	
+	\subsection{剪枝优化}
+	
+	\begin{bluebox}
+		\textbf{DFS剪枝策略}
+		
+		\begin{enumerate}
+			\item \textbf{可行性剪枝}：当前状态不可能达到目标时提前返回
+			\item \textbf{最优性剪枝}：当前状态不如已知最优解时提前返回
+			\item \textbf{对称性剪枝}：利用问题的对称性减少搜索空间
+			\item \textbf{记忆化搜索}：避免重复搜索相同状态
+		\end{enumerate}
+	\end{bluebox}
+	
+	\begin{lstlisting}[caption={DFS剪枝示例：N皇后问题}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		vector<vector<string>> result;
+		
+		bool isValid(vector<string>& board, int row, int col, int n) {
+			// 检查列
+			for (int i = 0; i < row; i++) {
+				if (board[i][col] == 'Q') return false;
+			}
+			
+			// 检查左上方对角线
+			for (int i = row - 1, j = col - 1; i >= 0 && j >= 0; i--, j--) {
+				if (board[i][j] == 'Q') return false;
+			}
+			
+			// 检查右上方对角线
+			for (int i = row - 1, j = col + 1; i >= 0 && j < n; i--, j++) {
+				if (board[i][j] == 'Q') return false;
+			}
+			
+			return true;
+		}
+		
+		void backtrack(vector<string>& board, int row, int n) {
+			if (row == n) {
+				result.push_back(board);
+				return;
+			}
+			
+			for (int col = 0; col < n; col++) {
+				// 可行性剪枝：只尝试合法位置
+				if (isValid(board, row, col, n)) {
+					board[row][col] = 'Q';
+					backtrack(board, row + 1, n);
+					board[row][col] = '.';
+				}
+			}
+		}
+		
+		vector<vector<string>> solveNQueens(int n) {
+			vector<string> board(n, string(n, '.'));
+			backtrack(board, 0, n);
+			return result;
+		}
+		
+		int main() {
+			int n = 4;
+			auto solutions = solveNQueens(n);
+			
+			cout << n << "皇后问题的解法数量: " << solutions.size() << endl;
+			for (auto& solution : solutions) {
+				for (auto& row : solution) {
+					cout << row << endl;
+				}
+				cout << endl;
+			}
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{双向BFS}
+	
+	\begin{lstlisting}[caption={双向BFS示例：单词接龙优化}]
+		#include <iostream>
+		#include <vector>
+		#include <unordered_set>
+		#include <unordered_map>
+		using namespace std;
+		
+		int ladderLengthBiBFS(string beginWord, string endWord, 
+		vector<string>& wordList) {
+			unordered_set<string> dict(wordList.begin(), wordList.end());
+			if (!dict.count(endWord)) return 0;
+			
+			unordered_set<string> beginSet{beginWord};
+			unordered_set<string> endSet{endWord};
+			int steps = 1;
+			
+			while (!beginSet.empty() && !endSet.empty()) {
+				// 总是扩展较小的集合
+				if (beginSet.size() > endSet.size()) {
+					swap(beginSet, endSet);
+				}
+				
+				unordered_set<string> nextSet;
+				
+				for (string word : beginSet) {
+					for (int i = 0; i < word.length(); i++) {
+						char original = word[i];
+						
+						for (char c = 'a'; c <= 'z'; c++) {
+							word[i] = c;
+							
+							if (endSet.count(word)) {
+								return steps + 1;
+							}
+							
+							if (dict.count(word)) {
+								nextSet.insert(word);
+								dict.erase(word);
+							}
+						}
+						
+						word[i] = original;
+					}
+				}
+				
+				beginSet = nextSet;
+				steps++;
+			}
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{记忆化搜索（Memoization）}
+	
+	\begin{lstlisting}[caption={记忆化搜索示例：最长递增路径}]
+		#include <iostream>
+		#include <vector>
+		#include <algorithm>
+		using namespace std;
+		
+		int dfs(vector<vector<int>>& matrix, vector<vector<int>>& memo, 
+		int i, int j) {
+			if (memo[i][j] != 0) {
+				return memo[i][j];  // 记忆化：直接返回已计算的结果
+			}
+			
+			int n = matrix.size();
+			int m = matrix[0].size();
+			int maxLen = 1;
+			
+			int dx[] = {-1, 1, 0, 0};
+			int dy[] = {0, 0, -1, 1};
+			
+			for (int k = 0; k < 4; k++) {
+				int ni = i + dx[k];
+				int nj = j + dy[k];
+				
+				if (ni >= 0 && ni < n && nj >= 0 && nj < m 
+				&& matrix[ni][nj] > matrix[i][j]) {
+					maxLen = max(maxLen, 1 + dfs(matrix, memo, ni, nj));
+				}
+			}
+			
+			memo[i][j] = maxLen;  // 存储结果
+			return maxLen;
+		}
+		
+		int longestIncreasingPath(vector<vector<int>>& matrix) {
+			if (matrix.empty()) return 0;
+			
+			int n = matrix.size(), m = matrix[0].size();
+			vector<vector<int>> memo(n, vector<int>(m, 0));
+			int result = 0;
+			
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j < m; j++) {
+					result = max(result, dfs(matrix, memo, i, j));
+				}
+			}
+			
+			return result;
+		}
+		
+		int main() {
+			vector<vector<int>> matrix = {
+				{9, 9, 4},
+				{6, 6, 8},
+				{2, 1, 1}
+			};
+			
+			cout << "最长递增路径长度: " << longestIncreasingPath(matrix) << endl;
+			// 输出: 4 (1 -> 2 -> 6 -> 9)
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\section{总结与对比}
+	
+	\begin{greenbox}
+		\textbf{BFS vs DFS 核心对比总结}
+		
+		\begin{center}
+			\begin{tabular}{|c|c|c|}
+				\hline
+				\textbf{特性} & \textbf{BFS} & \textbf{DFS} \\
+				\hline
+				数据结构 & 队列 & 栈（或递归） \\
+				\hline
+				遍历顺序 & 层次遍历 & 深度遍历 \\
+				\hline
+				最短路径 & 能找到最优解 & 不一定 \\
+				\hline
+				空间复杂度 & $O(w)$ - 宽度 & $O(h)$ - 深度 \\
+				\hline
+				实现难度 & 较简单 & 递归简单，迭代较难 \\
+				\hline
+				适用场景 & 最短路、层序 & 枚举所有解、回溯 \\
+				\hline
+				栈溢出风险 & 无（迭代） & 有（递归深度大） \\
+				\hline
+				剪枝难度 & 较难 & 容易 \\
+				\hline
+			\end{tabular}
+		\end{center}
+	\end{greenbox}
+	
+	\begin{purplebox}
+		\textbf{面试高频考点}
+		
+		\begin{enumerate}
+			\item \textbf{岛屿系列}：岛屿数量、最大岛屿面积、岛屿周长
+			\item \textbf{迷宫系列}：最短路径、墙与门、逃离迷宫
+			\item \textbf{单词系列}：单词接龙、单词搜索
+			\item \textbf{排列组合}：全排列、子集、组合总和
+			\item \textbf{图遍历}：克隆图、课程表、网络延迟
+			\item \textbf{矩阵搜索}：被围绕区域、太平洋大西洋水流
+			\item \textbf{状态搜索}：打开转盘锁、滑动谜题
+		\end{enumerate}
+	\end{purplebox}
+	
+	\section{练习题推荐}
+	
+	\begin{enumerate}[leftmargin=*]
+		\item \textbf{DFS基础}：
+		\begin{itemize}
+			\item 岛屿的最大面积（LeetCode 695）
+			\item 省份数量（LeetCode 547）
+			\item 组合总和（LeetCode 39）
+		\end{itemize}
+		\item \textbf{BFS基础}：
+		\begin{itemize}
+			\item 二叉树的层序遍历（LeetCode 102）
+			\item 墙与门（LeetCode 286）
+			\item 腐烂的橘子（LeetCode 994）
+		\end{itemize}
+		\item \textbf{进阶挑战}：
+		\begin{itemize}
+			\item 打开转盘锁（LeetCode 752）
+			\item 滑动谜题（LeetCode 773）
+			\item 公交路线（LeetCode 815）
+		\end{itemize}
+		\item \textbf{困难模式}：
+		\begin{itemize}
+			\item 最短超级串（LeetCode 943）
+			\item 逃离大迷宫（LeetCode 1036）
+			\item 访问所有节点的最短路径（LeetCode 847）
+		\end{itemize}
+	\end{enumerate}
+	
+\end{document}
