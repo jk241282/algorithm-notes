@@ -1,0 +1,92 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[UTF8]{ctex} % 支持中文
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\geometry{a4paper, margin=1in}
+
+% 定义表格颜色和样式
+\definecolor{lightgray}{gray}{0.92}
+\newcolumntype{Y}{>{\centering\arraybackslash}X}
+
+\title{\textbf{ICPC竞赛高频算法与数据结构指南}}
+\author{算法学习路线}
+\date{\today}
+
+\begin{document}
+	
+	\maketitle
+	
+	\begin{abstract}
+		根据对历年ICPC（国际大学生程序设计竞赛）赛题的统计分析，约80\%的题目都集中在核心的算法与数据结构上。本文将高频考点划分为三个优先级梯队，并为初学者提供了学习路径建议。
+	\end{abstract}
+	
+	\section{第一梯队：绝对核心，必须精通}
+	这一部分是竞赛的基石，几乎每场比赛都会出现，必须达到“肌肉记忆”级别的熟练度。
+	
+	\begin{table}[h!]
+		\centering
+		\caption{第一梯队核心知识点}
+		\label{tab:tier1}
+		\begin{tabularx}{\textwidth}{|X|X|X|}
+			\hline
+			\rowcolor{lightgray} \textbf{知识点分类} & \textbf{具体算法与数据结构} & \textbf{核心应用场景与说明} \\ \hline
+			基础算法 & 枚举、贪心、二分/三分、前缀和与差分、排序 & 几乎所有题目都涉及的基础思想。用于最优化问题与区间处理。 \\ \hline
+			动态规划 (DP) & 线性DP、背包问题、区间DP、树形DP、状态压缩DP & “算法之王”，用于求解最优子结构问题，如资源分配、路径规划。 \\ \hline
+			数据结构 & 栈、队列、并查集、哈希表 & 并查集是处理\textbf{集合合并与查询}的神器，代码短效率高。 \\ \hline
+			图论 & DFS/BFS、拓扑排序、最短路(Dijkstra, Floyd)、最小生成树(Kruskal) & 图论是ICPC的“半壁江山”，用于解决网络连通、路径规划等问题。 \\ \hline
+			数学 & 快速幂、GCD/扩展欧几里得、素数筛法、组合数学 & 很多问题本质是数学题，扩展欧几里得是解不定方程的必备工具。 \\ \hline
+		\end{tabularx}
+	\end{table}
+	
+	\section{第二梯队：高分必备，拉分关键}
+	掌握这些能让你的队伍稳稳进入中上游，是解决3-5题的关键。
+	
+	\begin{table}[h!]
+		\centering
+		\caption{第二梯队进阶知识点}
+		\label{tab:tier2}
+		\begin{tabularx}{\textwidth}{|X|X|X|}
+			\hline
+			\rowcolor{lightgray} \textbf{知识点分类} & \textbf{具体算法与数据结构} & \textbf{核心应用场景与说明} \\ \hline
+			高级数据结构 & 线段树、树状数组、平衡树(Treap/Splay) & \textbf{区间操作的利器}，用于处理动态的区间求和、最值、修改问题。 \\ \hline
+			图论进阶 & 强连通分量(Tarjan)、LCA(倍增)、二分图匹配、网络流 & 处理复杂关系问题，如社交网络圈、树上路径查询、分配问题。 \\ \hline
+			字符串 & 字符串哈希、KMP、Trie、Manacher、后缀数组 & 用于文本匹配、模式检索、回文串处理等。 \\ \hline
+			数学进阶 & 高斯消元、矩阵快速幂、容斥原理、博弈论(SG函数) & 解决线性方程组、递推优化、计数问题和组合游戏。 \\ \hline
+			计算几何 & 点积/叉积、判断线段相交、凸包 & 叉积是计算几何的灵魂，用于处理几何图形相关问题。 \\ \hline
+		\end{tabularx}
+	\end{table}
+	
+	\section{第三梯队：冲刺大神，决胜巅峰}
+	这是通往顶尖选手（如World Finalist）的必经之路，主要用于解决赛题中最难的1-2题。
+	
+	\begin{itemize}
+		\item \textbf{DP优化}：斜率优化、四边形不等式优化、单调队列优化。用于将 \(O(N^2)\) 的DP降为 \(O(N)\) 或 \(O(N \log N)\)。
+		\item \textbf{高级图论}：费用流、带花树（一般图匹配）、Gomory-Hu树。解决超复杂的网络流或匹配问题。
+		\item \textbf{数学终极}：快速傅里叶变换(FFT/NTT)、线性基、莫比乌斯反演、概率与期望DP。
+		\item \textbf{复杂算法}：模拟退火、舞蹈链(DLX)、启发式搜索。通常用于求解NP-hard问题的近似解。
+	\end{itemize}
+	
+	\begin{quote}
+		\textbf{数据洞察：} 根据一项针对近十年ICPC数据的分析，一线选手在Codeforces上的Elo评分，与其在ICPC World Finals上的最终排名具有强相关性（\( \tau = 0.596 \)）。这表明，持续参加高强度的线上比赛是掌握这些算法的有效途径。
+	\end{quote}
+	
+	\section{学习路径建议}
+	面对庞大的算法体系，建议遵循以下通用进阶路径：
+	
+	\begin{enumerate}[label=\arabic*.]
+		\item \textbf{入门（青铜）}：彻底掌握第一梯队。大量刷简单题，达到\textbf{看到题目立刻想到用哪种基础算法}的程度。
+		\item \textbf{进阶（白银~黄金）}：主攻第二梯队。针对性地进行专题训练，例如花两周时间集中攻克线段树的各类题型。
+		\item \textbf{冲刺（王者）}：拓展第三梯队。重点锻炼\textbf{思维建模能力}，即如何将实际问题抽象成自己会做的算法模型。
+	\end{enumerate}
+	
+	\begin{center}
+		\fbox{\parbox{0.8\textwidth}{\centering \textbf{总结：}\\
+				先稳扎稳打拿下第一梯队，再逐步攻克第二、第三梯队。不必追求所有算法都精通，但要对核心、高频的算法做到心中有数、手到擒来。}}
+	\end{center}
+	
+\end{document}
