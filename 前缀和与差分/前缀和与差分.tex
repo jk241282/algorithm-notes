@@ -1,0 +1,1366 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{float}
+
+\geometry{margin=2.5cm}
+
+% 定义颜色
+\definecolor{lightgray}{RGB}{240,240,240}
+\definecolor{myblue}{RGB}{70,130,180}
+\definecolor{mygreen}{RGB}{34,139,34}
+\definecolor{myred}{RGB}{220,20,60}
+\definecolor{myorange}{RGB}{255,140,0}
+\definecolor{myyellow}{RGB}{218,165,32}
+\definecolor{mypurple}{RGB}{128,0,128}
+
+% C++ 代码高亮设置
+\lstset{
+	language=C++,
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{myblue}\bfseries,
+	commentstyle=\color{gray},
+	stringstyle=\color{teal},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	stepnumber=1,
+	numbersep=5pt,
+	backgroundcolor=\color{lightgray!30},
+	frame=single,
+	breaklines=true,
+	breakatwhitespace=false,
+	tabsize=4,
+	showspaces=false,
+	showstringspaces=false,
+	showtabs=false,
+	captionpos=b,
+	morekeywords={long long, vector, pair, unordered\_map, unordered\_set}
+}
+
+% 自定义盒子环境
+\newtcolorbox{bluebox}{
+	colback=myblue!10!white,
+	colframe=myblue!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\newtcolorbox{greenbox}{
+	colback=mygreen!10!white,
+	colframe=mygreen!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\newtcolorbox{redbox}{
+	colback=myred!10!white,
+	colframe=myred!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\newtcolorbox{orangebox}{
+	colback=myorange!10!white,
+	colframe=myorange!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\newtcolorbox{yellowbox}{
+	colback=myyellow!10!white,
+	colframe=myyellow!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\newtcolorbox{purplebox}{
+	colback=mypurple!10!white,
+	colframe=mypurple!70!black,
+	fonttitle=\bfseries,
+	arc=4pt
+}
+
+\title{\Huge \textbf{前缀和与差分算法完全指南}}
+\author{算法学习笔记}
+\date{\today}
+
+\begin{document}
+	
+	\maketitle
+	
+	\tableofcontents
+	\newpage
+	
+	\section{前缀和算法基础}
+	
+	\subsection{什么是前缀和？}
+	
+	前缀和（Prefix Sum）是一种预处理技术，通过预先计算数组的前缀和，可以在$O(1)$时间内回答任意区间和的查询。
+	
+	\begin{bluebox}
+		\textbf{前缀和的核心思想}
+		
+		\textbf{一句话概括：}提前计算好前$i$个元素的和，使得区间求和从$O(n)$降到$O(1)$。
+		
+		\textbf{数学定义：}
+		给定数组 $a[0], a[1], ..., a[n-1]$，定义前缀和数组 $pre[i]$：
+		$$pre[i] = \sum_{k=0}^{i} a[k] = a[0] + a[1] + ... + a[i]$$
+		
+		特别地，$pre[-1] = 0$（或设置 $pre[0] = 0$ 作为哨兵）
+		
+		\textbf{区间求和公式：}
+		$$\sum_{k=l}^{r} a[k] = pre[r] - pre[l-1]$$
+	\end{bluebox}
+	
+	\subsection{一维前缀和模板}
+	
+	\begin{lstlisting}[caption={一维前缀和 - 基础模板}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		// 构建前缀和数组
+		vector<int> buildPrefixSum(vector<int>& nums) {
+			int n = nums.size();
+			vector<int> pre(n + 1, 0);  // 多开一个空间，pre[0]=0
+			
+			for (int i = 0; i < n; i++) {
+				pre[i + 1] = pre[i] + nums[i];
+			}
+			
+			return pre;
+		}
+		
+		// 查询区间 [l, r] 的和（0-indexed）
+		int rangeSum(vector<int>& pre, int l, int r) {
+			return pre[r + 1] - pre[l];
+		}
+		
+		int main() {
+			vector<int> nums = {3, 5, 2, -1, 6, 8, -3, 4};
+			
+			// 构建前缀和
+			vector<int> pre = buildPrefixSum(nums);
+			
+			cout << "原始数组: ";
+			for (int x : nums) cout << x << " ";
+			cout << endl;
+			
+			cout << "前缀和数组: ";
+			for (int x : pre) cout << x << " ";
+			cout << endl;
+			
+			// 查询区间和
+			cout << "区间[0, 2]的和: " << rangeSum(pre, 0, 2) << endl;  // 3+5+2=10
+			cout << "区间[1, 4]的和: " << rangeSum(pre, 1, 4) << endl;  // 5+2-1+6=12
+			cout << "区间[3, 7]的和: " << rangeSum(pre, 3, 7) << endl;  // -1+6+8-3+4=14
+			
+			return 0;
+		}
+		/* 输出:
+		原始数组: 3 5 2 -1 6 8 -3 4 
+		前缀和数组: 0 3 8 10 9 15 23 20 24 
+		区间[0, 2]的和: 10
+		区间[1, 4]的和: 12
+		区间[3, 7]的和: 14
+		*/
+	\end{lstlisting}
+	
+	\subsection{前缀和的核心优势}
+	
+	\begin{greenbox}
+		\textbf{为什么要用前缀和？}
+		
+		\begin{center}
+			\begin{tabular}{|c|c|c|}
+				\hline
+				\textbf{操作} & \textbf{不使用前缀和} & \textbf{使用前缀和} \\
+				\hline
+				单次区间查询 & $O(n)$ 遍历求和 & $O(1)$ 公式计算 \\
+				\hline
+				m次区间查询 & $O(m \times n)$ 可能超时 & $O(n + m)$ 高效 \\
+				\hline
+				空间复杂度 & $O(1)$ & $O(n)$ 额外空间 \\
+				\hline
+			\end{tabular}
+		\end{center}
+		
+		\textbf{典型场景：}当需要多次查询区间和时，前缀和可以大幅降低时间复杂度。
+	\end{greenbox}
+	
+	\subsection{前缀和的变体}
+	
+	\begin{lstlisting}[caption={前缀和变体 - 多种应用}]
+		#include <iostream>
+		#include <vector>
+		#include <unordered_map>
+		using namespace std;
+		
+		// 变体1：前缀异或和
+		vector<int> buildPrefixXor(vector<int>& nums) {
+			int n = nums.size();
+			vector<int> preXor(n + 1, 0);
+			for (int i = 0; i < n; i++) {
+				preXor[i + 1] = preXor[i] ^ nums[i];
+			}
+			return preXor;
+		}
+		
+		// 查询区间异或值
+		int rangeXor(vector<int>& preXor, int l, int r) {
+			return preXor[r + 1] ^ preXor[l];
+		}
+		
+		// 变体2：前缀积（注意溢出和除零问题）
+		vector<long long> buildPrefixProduct(vector<int>& nums) {
+			int n = nums.size();
+			vector<long long> preProd(n + 1, 1);  // 乘积初始化为1
+			for (int i = 0; i < n; i++) {
+				preProd[i + 1] = preProd[i] * nums[i];
+			}
+			return preProd;
+		}
+		
+		// 变体3：前缀最值（前缀最大值）
+		vector<int> buildPrefixMax(vector<int>& nums) {
+			int n = nums.size();
+			vector<int> preMax(n + 1, INT_MIN);
+			for (int i = 0; i < n; i++) {
+				preMax[i + 1] = max(preMax[i], nums[i]);
+			}
+			return preMax;
+		}
+		
+		int main() {
+			vector<int> nums = {3, 5, 2, 7, 1, 8, 4};
+			
+			// 前缀异或和
+			vector<int> preXor = buildPrefixXor(nums);
+			cout << "区间[1, 3]的异或值: " << rangeXor(preXor, 1, 3) << endl;
+			
+			// 前缀最大值
+			vector<int> preMax = buildPrefixMax(nums);
+			cout << "前5个元素的最大值: " << preMax[5] << endl;
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\section{二维前缀和}
+	
+	\subsection{二维前缀和原理}
+	
+	二维前缀和将前缀和扩展到了二维矩阵，可以在$O(1)$时间内计算任意子矩阵的和。
+	
+	\begin{bluebox}
+		\textbf{二维前缀和公式}
+		
+		\textbf{构建公式：}
+		$$pre[i][j] = pre[i-1][j] + pre[i][j-1] - pre[i-1][j-1] + a[i-1][j-1]$$
+		
+		\textbf{子矩阵查询公式：}
+		左上角$(x1, y1)$，右下角$(x2, y2)$的子矩阵和：
+		$$sum = pre[x2][y2] - pre[x1-1][y2] - pre[x2][y1-1] + pre[x1-1][y1-1]$$
+		
+		\textbf{图解：}
+		\begin{verbatim}
+			pre[x2][y2]           - pre[x1-1][y2]        - pre[x2][y1-1]        + pre[x1-1][y1-1]
+			┌──────┬──────┬──────┐   ┌──────┬──────┬──────┐   ┌──────┬──────┬──────┐   ┌──────┬──────┬──────┐
+			│      │      │      │   │██████│██████│██████│   │██████│      │      │   │██████│      │      │
+			│      │      │      │ = │      │      │      │ - │██████│      │      │ + │██████│      │      │
+			│      │      │      │   │      │      │      │   │██████│      │      │   │██████│      │      │
+			└──────┴──────┴──────┘   └──────┴──────┴──────┘   └──────┴──────┴──────┘   └──────┴──────┴──────┘
+			全部区域              - 上方区域             - 左方区域              + 左上角(重复减了)
+		\end{verbatim}
+	\end{bluebox}
+	
+	\subsection{二维前缀和模板}
+	
+	\begin{lstlisting}[caption={二维前缀和 - 完整模板}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		class NumMatrix {
+			private:
+			vector<vector<int>> pre;  // 二维前缀和数组
+			
+			public:
+			// 构建二维前缀和
+			NumMatrix(vector<vector<int>>& matrix) {
+				if (matrix.empty()) return;
+				
+				int n = matrix.size();
+				int m = matrix[0].size();
+				
+				// 多开一行一列，方便处理边界
+				pre.resize(n + 1, vector<int>(m + 1, 0));
+				
+				for (int i = 1; i <= n; i++) {
+					for (int j = 1; j <= m; j++) {
+						pre[i][j] = pre[i-1][j] + pre[i][j-1] 
+						- pre[i-1][j-1] + matrix[i-1][j-1];
+					}
+				}
+			}
+			
+			// 查询子矩阵和：(row1, col1) 到 (row2, col2) (0-indexed)
+			int sumRegion(int row1, int col1, int row2, int col2) {
+				// 转换为1-indexed
+				row1++; col1++; row2++; col2++;
+				
+				return pre[row2][col2] 
+				- pre[row1-1][col2] 
+				- pre[row2][col1-1] 
+				+ pre[row1-1][col1-1];
+			}
+			
+			// 打印前缀和矩阵（调试用）
+			void print() {
+				for (int i = 0; i < pre.size(); i++) {
+					for (int j = 0; j < pre[0].size(); j++) {
+						cout << pre[i][j] << "\t";
+					}
+					cout << endl;
+				}
+			}
+		};
+		
+		int main() {
+			vector<vector<int>> matrix = {
+				{3, 0, 1, 4, 2},
+				{5, 6, 3, 2, 1},
+				{1, 2, 0, 1, 5},
+				{4, 1, 0, 1, 7},
+				{1, 0, 3, 0, 5}
+			};
+			
+			NumMatrix nm(matrix);
+			
+			cout << "原始矩阵:" << endl;
+			for (auto& row : matrix) {
+				for (int x : row) cout << x << " ";
+				cout << endl;
+			}
+			
+			cout << "\n前缀和矩阵:" << endl;
+			nm.print();
+			
+			// 查询子矩阵和
+			cout << "\n子矩阵(2,1)到(4,3)的和: " 
+			<< nm.sumRegion(2, 1, 4, 3) << endl;  // 2+0+1 + 1+0+1 + 0+3+0 = 8
+			
+			cout << "子矩阵(1,1)到(2,2)的和: " 
+			<< nm.sumRegion(1, 1, 2, 2) << endl;  // 6+3+2+0 = 11
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\section{差分算法基础}
+	
+	\subsection{什么是差分？}
+	
+	差分（Difference Array）是前缀和的逆运算，用于快速对区间进行增减操作。
+	
+	\begin{bluebox}
+		\textbf{差分的核心思想}
+		
+		\textbf{一句话概括：}将对区间的修改操作转化为对两个端点的修改，使得区间修改从$O(n)$降到$O(1)$。
+		
+		\textbf{数学定义：}
+		给定数组 $a[0], a[1], ..., a[n-1]$，定义差分数组 $diff[i]$：
+		$$diff[0] = a[0]$$
+		$$diff[i] = a[i] - a[i-1] \quad (i \geq 1)$$
+		
+		\textbf{区间修改操作：}
+		要对区间 $[l, r]$ 的所有元素加上 $val$：
+		$$diff[l] += val$$
+		$$diff[r+1] -= val$$
+		
+		\textbf{还原原数组：}
+		对差分数组求前缀和即可还原：
+		$$a[i] = \sum_{k=0}^{i} diff[k]$$
+	\end{bluebox}
+	
+	\subsection{一维差分模板}
+	
+	\begin{lstlisting}[caption={一维差分 - 完整模板}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		class Difference {
+			private:
+			vector<int> diff;  // 差分数组
+			
+			public:
+			// 初始化差分数组
+			Difference(vector<int>& nums) {
+				int n = nums.size();
+				diff.resize(n);
+				
+				if (n > 0) {
+					diff[0] = nums[0];
+					for (int i = 1; i < n; i++) {
+						diff[i] = nums[i] - nums[i-1];
+					}
+				}
+			}
+			
+			// 对区间 [l, r] 的所有元素增加 val
+			void increment(int l, int r, int val) {
+				diff[l] += val;
+				if (r + 1 < diff.size()) {
+					diff[r + 1] -= val;
+				}
+			}
+			
+			// 还原原数组
+			vector<int> result() {
+				vector<int> res(diff.size());
+				res[0] = diff[0];
+				for (int i = 1; i < diff.size(); i++) {
+					res[i] = res[i-1] + diff[i];
+				}
+				return res;
+			}
+		};
+		
+		int main() {
+			vector<int> nums = {1, 2, 3, 4, 5, 6, 7, 8};
+			
+			cout << "原始数组: ";
+			for (int x : nums) cout << x << " ";
+			cout << endl;
+			
+			Difference d(nums);
+			
+			// 执行区间修改
+			d.increment(1, 3, 2);   // 下标1到3的元素增加2
+			d.increment(2, 5, -3);  // 下标2到5的元素减少3
+			d.increment(0, 7, 1);   // 所有元素增加1
+			
+			// 获取最终结果
+			vector<int> result = d.result();
+			
+			cout << "修改后的数组: ";
+			for (int x : result) cout << x << " ";
+			cout << endl;
+			
+			// 手动验证：
+			// 原数组: [1, 2, 3, 4, 5, 6, 7, 8]
+			// 操作1(1,3,+2): [1, 4, 5, 6, 5, 6, 7, 8]
+			// 操作2(2,5,-3): [1, 4, 2, 3, 2, 3, 7, 8]
+			// 操作3(0,7,+1): [2, 5, 3, 4, 3, 4, 8, 9]
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{差分与前缀和的关系}
+	
+	\begin{yellowbox}
+		\textbf{前缀和与差分的对偶关系}
+		
+		$$原数组 \xrightarrow{\text{前缀和}} 前缀和数组$$
+		$$原数组 \xleftarrow[\text{前缀和}]{\text{差分}} 差分数组$$
+		
+		\begin{itemize}
+			\item \textbf{前缀和}：快速查询区间和（静态查询）
+			\item \textbf{差分}：快速修改区间值（动态修改）
+			\item \textbf{前缀和+差分}：同时支持区间修改和区间查询（树状数组的核心思想）
+		\end{itemize}
+	\end{yellowbox}
+	
+	\section{二维差分}
+	
+	\subsection{二维差分原理}
+	
+	二维差分用于在$O(1)$时间内对二维矩阵的子矩阵进行增减操作。
+	
+	\begin{lstlisting}[caption={二维差分 - 完整模板}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		// 二维差分
+		void rangeAdd(vector<vector<int>>& diff, 
+		int x1, int y1, int x2, int y2, int val) {
+			diff[x1][y1] += val;
+			diff[x2+1][y1] -= val;
+			diff[x1][y2+1] -= val;
+			diff[x2+1][y2+1] += val;
+		}
+		
+		// 还原原矩阵（对差分矩阵求二维前缀和）
+		vector<vector<int>> getOriginal(vector<vector<int>>& diff) {
+			int n = diff.size();
+			int m = diff[0].size();
+			
+			vector<vector<int>> res(n, vector<int>(m, 0));
+			
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j < m; j++) {
+					res[i][j] = diff[i][j];
+					if (i > 0) res[i][j] += res[i-1][j];
+					if (j > 0) res[i][j] += res[i][j-1];
+					if (i > 0 && j > 0) res[i][j] -= res[i-1][j-1];
+				}
+			}
+			
+			return res;
+		}
+		
+		int main() {
+			int n = 4, m = 5;
+			// diff多开一行一列处理边界
+			vector<vector<int>> diff(n + 1, vector<int>(m + 1, 0));
+			
+			// 执行几个子矩阵修改操作
+			rangeAdd(diff, 0, 0, 2, 2, 3);  // 左上角3x3区域加3
+			rangeAdd(diff, 1, 1, 3, 3, -2); // 中间区域减2
+			
+			// 还原矩阵
+			auto result = getOriginal(diff);
+			
+			cout << "修改后的矩阵:" << endl;
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j < m; j++) {
+					cout << result[i][j] << " ";
+				}
+				cout << endl;
+			}
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\section{经典例题详解}
+	
+	\subsection{例题1：和为K的子数组}
+	
+	\textbf{题目描述：}给定一个整数数组和一个整数$k$，求该数组中和为$k$的连续子数组的个数。
+	
+	\textbf{解题思路：}
+	\begin{itemize}
+		\item 使用前缀和 + 哈希表
+		\item 对于每个位置$i$，计算当前前缀和$pre[i]$
+		\item 如果之前有前缀和为$pre[i]-k$的位置$j$，则$[j+1, i]$的和为$k$
+		\item 用哈希表记录每个前缀和出现的次数
+	\end{itemize}
+	
+	\begin{lstlisting}[caption={例题1：和为K的子数组}]
+		#include <iostream>
+		#include <vector>
+		#include <unordered_map>
+		using namespace std;
+		
+		int subarraySum(vector<int>& nums, int k) {
+			// 哈希表：前缀和 -> 出现次数
+			unordered_map<int, int> preSumCount;
+			
+			// 初始化：前缀和为0出现1次（处理从开头开始的子数组）
+			preSumCount[0] = 1;
+			
+			int curSum = 0;  // 当前前缀和
+			int count = 0;   // 结果
+			
+			for (int num : nums) {
+				curSum += num;  // 计算当前前缀和
+				
+				// 如果之前存在前缀和 = curSum - k
+				// 那么从那个位置到当前位置的子数组和为k
+				if (preSumCount.find(curSum - k) != preSumCount.end()) {
+					count += preSumCount[curSum - k];
+				}
+				
+				// 更新当前前缀和的计数
+				preSumCount[curSum]++;
+			}
+			
+			return count;
+		}
+		
+		int main() {
+			vector<int> nums = {1, 1, 1};
+			int k = 2;
+			
+			cout << "数组: ";
+			for (int x : nums) cout << x << " ";
+			cout << endl;
+			cout << "和为" << k << "的子数组个数: " 
+			<< subarraySum(nums, k) << endl;
+			// 输出: 2 (子数组[1,1]出现两次)
+			
+			nums = {1, 2, 3};
+			k = 3;
+			cout << "\n数组: ";
+			for (int x : nums) cout << x << " ";
+			cout << endl;
+			cout << "和为" << k << "的子数组个数: " 
+			<< subarraySum(nums, k) << endl;
+			// 输出: 2 ([1,2]和[3])
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{例题2：区域和检索（二维前缀和）}
+	
+	\textbf{题目描述：}实现一个类，支持查询二维矩阵中任意子矩阵的元素和。
+	
+	\begin{lstlisting}[caption={例题2：二维区域和检索}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		class NumMatrix {
+			private:
+			vector<vector<int>> pre;
+			
+			public:
+			NumMatrix(vector<vector<int>>& matrix) {
+				if (matrix.empty()) return;
+				
+				int n = matrix.size();
+				int m = matrix[0].size();
+				pre.assign(n + 1, vector<int>(m + 1, 0));
+				
+				for (int i = 1; i <= n; i++) {
+					for (int j = 1; j <= m; j++) {
+						pre[i][j] = pre[i-1][j] + pre[i][j-1] 
+						- pre[i-1][j-1] + matrix[i-1][j-1];
+					}
+				}
+			}
+			
+			int sumRegion(int row1, int col1, int row2, int col2) {
+				row1++; col1++; row2++; col2++;
+				return pre[row2][col2] 
+				- pre[row1-1][col2] 
+				- pre[row2][col1-1] 
+				+ pre[row1-1][col1-1];
+			}
+		};
+		
+		int main() {
+			vector<vector<int>> matrix = {
+				{3, 0, 1, 4, 2},
+				{5, 6, 3, 2, 1},
+				{1, 2, 0, 1, 5},
+				{4, 1, 0, 1, 7},
+				{1, 0, 3, 0, 5}
+			};
+			
+			NumMatrix nm(matrix);
+			
+			cout << "区域(2,1)到(4,3)的和: " 
+			<< nm.sumRegion(2, 1, 4, 3) << endl;  // 8
+			cout << "区域(1,1)到(2,2)的和: " 
+			<< nm.sumRegion(1, 1, 2, 2) << endl;  // 11
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{例题3：航班预订统计}
+	
+	\textbf{题目描述：}有$n$个航班，预定记录$bookings[i] = [first_i, last_i, seats_i]$表示从航班$first_i$到$last_i$的每个航班预订了$seats_i$个座位。返回每个航班预订的座位总数。
+	
+	\textbf{解题思路：}这是典型的差分数组应用！多次区间修改，最后查询所有位置的值。
+	
+	\begin{lstlisting}[caption={例题3：航班预订统计 - 差分数组}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		vector<int> corpFlightBookings(vector<vector<int>>& bookings, int n) {
+			// 差分数组
+			vector<int> diff(n, 0);
+			
+			// 处理每次预订
+			for (auto& booking : bookings) {
+				int first = booking[0] - 1;  // 转换为0-indexed
+				int last = booking[1] - 1;
+				int seats = booking[2];
+				
+				// 差分修改
+				diff[first] += seats;
+				if (last + 1 < n) {
+					diff[last + 1] -= seats;
+				}
+			}
+			
+			// 还原结果（差分数组求前缀和）
+			vector<int> result(n);
+			result[0] = diff[0];
+			for (int i = 1; i < n; i++) {
+				result[i] = result[i-1] + diff[i];
+			}
+			
+			return result;
+		}
+		
+		int main() {
+			vector<vector<int>> bookings = {
+				{1, 2, 10},
+				{2, 3, 20},
+				{2, 5, 25}
+			};
+			int n = 5;
+			
+			vector<int> result = corpFlightBookings(bookings, n);
+			
+			cout << "各航班预订座位数: ";
+			for (int seats : result) {
+				cout << seats << " ";
+			}
+			cout << endl;
+			// 输出: 10 55 45 25 25
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{例题4：拼车问题}
+	
+	\textbf{题目描述：}给定一个行程数组$trips[i] = [numPassengers, from, to]$，表示在$from$公里处上车$numPassengers$人，在$to$公里处下车。判断是否能够一次接送所有乘客且不超载。
+	
+	\begin{lstlisting}[caption={例题4：拼车问题 - 差分数组}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		bool carPooling(vector<vector<int>>& trips, int capacity) {
+			// 找出最大的下车点
+			int maxPos = 0;
+			for (auto& trip : trips) {
+				maxPos = max(maxPos, trip[2]);
+			}
+			
+			// 差分数组
+			vector<int> diff(maxPos + 2, 0);
+			
+			// 处理每次行程
+			for (auto& trip : trips) {
+				int num = trip[0];
+				int from = trip[1];
+				int to = trip[2];
+				
+				// 在from处上车
+				diff[from] += num;
+				// 在to处下车
+				diff[to] -= num;
+			}
+			
+			// 模拟行驶过程，检查是否超载
+			int curPassengers = 0;
+			for (int i = 0; i <= maxPos; i++) {
+				curPassengers += diff[i];
+				if (curPassengers > capacity) {
+					return false;  // 超载
+				}
+			}
+			
+			return true;
+		}
+		
+		int main() {
+			vector<vector<int>> trips = {
+				{2, 1, 5},
+				{3, 3, 7}
+			};
+			int capacity = 4;
+			
+			cout << "容量" << capacity << ": ";
+			if (carPooling(trips, capacity)) {
+				cout << "可以完成所有行程" << endl;
+			} else {
+				cout << "会超载" << endl;
+			}
+			// 输出: 会超载 (1-3公里有2人，3-5公里有5人>4)
+			
+			capacity = 5;
+			cout << "容量" << capacity << ": ";
+			if (carPooling(trips, capacity)) {
+				cout << "可以完成所有行程" << endl;
+			} else {
+				cout << "会超载" << endl;
+			}
+			// 输出: 可以完成所有行程
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\section{进阶题目详解}
+	
+	\subsection{进阶题1：乘积最大子数组}
+	
+	\textbf{题目描述：}给定一个整数数组，找出乘积最大的连续子数组，返回其乘积。
+	
+	\textbf{解题思路：}这是前缀思想的扩展。需要同时维护前缀最大值和前缀最小值（因为负数乘以负数可能变成最大正数）。
+	
+	\begin{lstlisting}[caption={进阶题1：乘积最大子数组}]
+		#include <iostream>
+		#include <vector>
+		#include <algorithm>
+		using namespace std;
+		
+		int maxProduct(vector<int>& nums) {
+			if (nums.empty()) return 0;
+			
+			int maxProd = nums[0];  // 全局最大值
+			int curMax = nums[0];   // 以前一个位置结尾的最大乘积
+			int curMin = nums[0];   // 以前一个位置结尾的最小乘积（处理负数）
+			
+			for (int i = 1; i < nums.size(); i++) {
+				// 如果当前数是负数，交换最大和最小
+				if (nums[i] < 0) {
+					swap(curMax, curMin);
+				}
+				
+				// 更新当前位置的最大最小值
+				curMax = max(nums[i], curMax * nums[i]);
+				curMin = min(nums[i], curMin * nums[i]);
+				
+				// 更新全局最大值
+				maxProd = max(maxProd, curMax);
+			}
+			
+			return maxProd;
+		}
+		
+		int main() {
+			vector<int> nums1 = {2, 3, -2, 4};
+			cout << "数组 [2,3,-2,4] 的最大乘积: " 
+			<< maxProduct(nums1) << endl;  // 6
+			
+			vector<int> nums2 = {-2, 0, -1};
+			cout << "数组 [-2,0,-1] 的最大乘积: " 
+			<< maxProduct(nums2) << endl;  // 0
+			
+			vector<int> nums3 = {-2, 3, -4};
+			cout << "数组 [-2,3,-4] 的最大乘积: " 
+			<< maxProduct(nums3) << endl;  // 24
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{进阶题2：连续子数组的最大和}
+	
+	\textbf{题目描述：}给定一个整数数组，找出具有最大和的连续子数组，返回其最大和。
+	
+	\begin{lstlisting}[caption={进阶题2：最大子数组和 - 前缀和优化}]
+		#include <iostream>
+		#include <vector>
+		#include <algorithm>
+		using namespace std;
+		
+		// 方法1：动态规划（Kadane算法）
+		int maxSubArrayDP(vector<int>& nums) {
+			int curMax = nums[0];
+			int globalMax = nums[0];
+			
+			for (int i = 1; i < nums.size(); i++) {
+				curMax = max(nums[i], curMax + nums[i]);
+				globalMax = max(globalMax, curMax);
+			}
+			
+			return globalMax;
+		}
+		
+		// 方法2：前缀和优化
+		int maxSubArrayPrefix(vector<int>& nums) {
+			int minPrefixSum = 0;  // 最小前缀和
+			int prefixSum = 0;     // 当前前缀和
+			int maxSum = nums[0];  // 最大子数组和
+			
+			for (int num : nums) {
+				prefixSum += num;
+				// 当前子数组和 = 当前前缀和 - 最小前缀和
+				maxSum = max(maxSum, prefixSum - minPrefixSum);
+				// 更新最小前缀和
+				minPrefixSum = min(minPrefixSum, prefixSum);
+			}
+			
+			return maxSum;
+		}
+		
+		int main() {
+			vector<int> nums = {-2, 1, -3, 4, -1, 2, 1, -5, 4};
+			
+			cout << "数组: ";
+			for (int x : nums) cout << x << " ";
+			cout << endl;
+			
+			cout << "最大子数组和(DP): " << maxSubArrayDP(nums) << endl;  // 6
+			cout << "最大子数组和(前缀和): " << maxSubArrayPrefix(nums) << endl;  // 6
+			// 子数组: [4, -1, 2, 1]
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{进阶题3：矩形区域不超过K的最大和}
+	
+	\textbf{题目描述：}给定一个非空二维矩阵和一个整数$k$，找到矩阵中矩形区域的和不超过$k$的最大值。
+	
+	\textbf{解题思路：}
+	\begin{itemize}
+		\item 固定上下边界，使用一维前缀和 + 有序集合
+		\item 将二维问题转化为一维问题
+		\item 对于每个固定上下边界的子矩阵，在一维前缀和中二分查找
+	\end{itemize}
+	
+	\begin{lstlisting}[caption={进阶题3：矩形区域不超过K的最大数值和}]
+		#include <iostream>
+		#include <vector>
+		#include <set>
+		#include <algorithm>
+		#include <climits>
+		using namespace std;
+		
+		int maxSumSubmatrix(vector<vector<int>>& matrix, int k) {
+			if (matrix.empty()) return 0;
+			
+			int n = matrix.size();
+			int m = matrix[0].size();
+			int maxSum = INT_MIN;
+			
+			// 固定左边界
+			for (int left = 0; left < m; left++) {
+				vector<int> rowSum(n, 0);  // 每行的累计和
+				
+				// 扩展右边界
+				for (int right = left; right < m; right++) {
+					// 更新每行的累计和
+					for (int i = 0; i < n; i++) {
+						rowSum[i] += matrix[i][right];
+					}
+					
+					// 在一维数组中找不超过k的最大子数组和
+					set<int> prefixSet;
+					prefixSet.insert(0);
+					int curSum = 0;
+					
+					for (int sum : rowSum) {
+						curSum += sum;
+						
+						// 找最小的前缀和 >= curSum - k
+						auto it = prefixSet.lower_bound(curSum - k);
+						if (it != prefixSet.end()) {
+							maxSum = max(maxSum, curSum - *it);
+						}
+						
+						prefixSet.insert(curSum);
+					}
+				}
+			}
+			
+			return maxSum;
+		}
+		
+		int main() {
+			vector<vector<int>> matrix = {
+				{1, 0, 1},
+				{0, -2, 3}
+			};
+			int k = 2;
+			
+			cout << "矩阵中不超过" << k << "的最大矩形和: " 
+			<< maxSumSubmatrix(matrix, k) << endl;
+			// 输出: 2
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{进阶题4：区间加法（二维差分应用）}
+	
+	\textbf{题目描述：}多次对二维数组的子区域进行加法操作，最后返回修改后的数组。
+	
+	\begin{lstlisting}[caption={进阶题4：区间加法 II - 二维差分}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		vector<vector<int>> rangeAddQueries(int n, 
+		vector<vector<int>>& queries) {
+			// 二维差分数组（多开一行一列）
+			vector<vector<int>> diff(n + 1, vector<int>(n + 1, 0));
+			
+			// 处理每个查询
+			for (auto& q : queries) {
+				int r1 = q[0], c1 = q[1];
+				int r2 = q[2], c2 = q[3];
+				
+				diff[r1][c1] += 1;
+				diff[r2 + 1][c1] -= 1;
+				diff[r1][c2 + 1] -= 1;
+				diff[r2 + 1][c2 + 1] += 1;
+			}
+			
+			// 还原矩阵
+			vector<vector<int>> result(n, vector<int>(n, 0));
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j < n; j++) {
+					result[i][j] = diff[i][j];
+					if (i > 0) result[i][j] += result[i-1][j];
+					if (j > 0) result[i][j] += result[i][j-1];
+					if (i > 0 && j > 0) result[i][j] -= result[i-1][j-1];
+				}
+			}
+			
+			return result;
+		}
+		
+		int main() {
+			int n = 3;
+			vector<vector<int>> queries = {
+				{0, 0, 1, 1},
+				{0, 0, 1, 0},
+				{1, 1, 2, 2}
+			};
+			
+			auto result = rangeAddQueries(n, queries);
+			
+			cout << "结果矩阵:" << endl;
+			for (auto& row : result) {
+				for (int val : row) {
+					cout << val << " ";
+				}
+				cout << endl;
+			}
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{进阶题5：按权重随机选择}
+	
+	\textbf{题目描述：}给定一个正整数数组$w$，其中$w[i]$代表第$i$个下标的权重。实现一个函数随机地返回下标，使得下标$i$被选取的概率与其权重成正比。
+	
+	\begin{lstlisting}[caption={进阶题5：按权重随机选择 - 前缀和+二分}]
+		#include <iostream>
+		#include <vector>
+		#include <random>
+		#include <algorithm>
+		using namespace std;
+		
+		class Solution {
+			private:
+			vector<int> prefixSum;  // 前缀和数组
+			int totalSum;
+			
+			public:
+			Solution(vector<int>& w) {
+				int n = w.size();
+				prefixSum.resize(n);
+				
+				prefixSum[0] = w[0];
+				for (int i = 1; i < n; i++) {
+					prefixSum[i] = prefixSum[i-1] + w[i];
+				}
+				
+				totalSum = prefixSum.back();
+			}
+			
+			int pickIndex() {
+				// 生成1到totalSum之间的随机数
+				int target = rand() % totalSum + 1;
+				
+				// 二分查找第一个 >= target 的前缀和位置
+				int left = 0, right = prefixSum.size() - 1;
+				while (left < right) {
+					int mid = left + (right - left) / 2;
+					if (prefixSum[mid] >= target) {
+						right = mid;
+					} else {
+						left = mid + 1;
+					}
+				}
+				
+				return left;
+			}
+		};
+		
+		int main() {
+			vector<int> w = {1, 3, 2};
+			Solution solution(w);
+			
+			// 模拟1000次选择
+			vector<int> count(3, 0);
+			for (int i = 0; i < 10000; i++) {
+				count[solution.pickIndex()]++;
+			}
+			
+			cout << "权重: [1, 3, 2]" << endl;
+			cout << "模拟10000次的结果:" << endl;
+			for (int i = 0; i < 3; i++) {
+				cout << "索引" << i << ": " << count[i] 
+				<< "次 (" << (double)count[i]/100 << "%)" << endl;
+			}
+			// 索引1应该出现约50%，索引2约33%，索引0约17%
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\section{高级技巧与优化}
+	
+	\subsection{技巧1：前缀和 + 单调栈}
+	
+	\begin{lstlisting}[caption={前缀和+单调栈：和大于target的最短子数组}]
+		#include <iostream>
+		#include <vector>
+		#include <stack>
+		#include <algorithm>
+		#include <climits>
+		using namespace std;
+		
+		// 和大于等于K的最短子数组（包含负数）
+		int shortestSubarray(vector<int>& nums, int k) {
+			int n = nums.size();
+			
+			// 计算前缀和
+			vector<long long> pre(n + 1, 0);
+			for (int i = 0; i < n; i++) {
+				pre[i + 1] = pre[i] + nums[i];
+			}
+			
+			// 单调双端队列（存储索引）
+			deque<int> dq;
+			int minLen = INT_MAX;
+			
+			for (int i = 0; i <= n; i++) {
+				// 检查是否有满足条件的子数组
+				while (!dq.empty() && pre[i] - pre[dq.front()] >= k) {
+					minLen = min(minLen, i - dq.front());
+					dq.pop_front();
+				}
+				
+				// 维护前缀和单调递增
+				while (!dq.empty() && pre[i] <= pre[dq.back()]) {
+					dq.pop_back();
+				}
+				
+				dq.push_back(i);
+			}
+			
+			return minLen == INT_MAX ? -1 : minLen;
+		}
+		
+		int main() {
+			vector<int> nums = {2, -1, 2};
+			int k = 3;
+			
+			cout << "数组: 2 -1 2" << endl;
+			cout << "和>=" << k << "的最短子数组长度: " 
+			<< shortestSubarray(nums, k) << endl;
+			// 输出: 3
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{技巧2：前缀和 + 同余定理}
+	
+	\begin{lstlisting}[caption={前缀和+同余：和可被K整除的子数组}]
+		#include <iostream>
+		#include <vector>
+		#include <unordered_map>
+		using namespace std;
+		
+		int subarraysDivByK(vector<int>& nums, int k) {
+			unordered_map<int, int> modCount;
+			modCount[0] = 1;  // 前缀余数为0出现1次
+			
+			int curSum = 0;
+			int count = 0;
+			
+			for (int num : nums) {
+				curSum += num;
+				
+				// 处理负数的情况
+				int mod = (curSum % k + k) % k;
+				
+				// 同余定理：如果两个前缀和的余数相同，则它们之间的子数组和能被k整除
+				if (modCount.find(mod) != modCount.end()) {
+					count += modCount[mod];
+				}
+				
+				modCount[mod]++;
+			}
+			
+			return count;
+		}
+		
+		int main() {
+			vector<int> nums = {4, 5, 0, -2, -3, 1};
+			int k = 5;
+			
+			cout << "能被" << k << "整除的子数组个数: " 
+			<< subarraysDivByK(nums, k) << endl;
+			// 输出: 7
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\subsection{技巧3：前缀统计（计数排序思想）}
+	
+	\begin{lstlisting}[caption={前缀统计：有多少小于当前数字的数字}]
+		#include <iostream>
+		#include <vector>
+		using namespace std;
+		
+		vector<int> smallerNumbersThanCurrent(vector<int>& nums) {
+			// 计数数组（题目限制0 <= nums[i] <= 100）
+			const int MAX_VAL = 101;
+			vector<int> count(MAX_VAL, 0);
+			
+			// 统计每个数字出现的次数
+			for (int num : nums) {
+				count[num]++;
+			}
+			
+			// 计算前缀和：prefix[i]表示小于i的数字个数
+			vector<int> prefix(MAX_VAL, 0);
+			for (int i = 1; i < MAX_VAL; i++) {
+				prefix[i] = prefix[i-1] + count[i-1];
+			}
+			
+			// 获取结果
+			vector<int> result(nums.size());
+			for (int i = 0; i < nums.size(); i++) {
+				result[i] = prefix[nums[i]];
+			}
+			
+			return result;
+		}
+		
+		int main() {
+			vector<int> nums = {8, 1, 2, 2, 3};
+			
+			cout << "原始数组: ";
+			for (int x : nums) cout << x << " ";
+			cout << endl;
+			
+			auto result = smallerNumbersThanCurrent(nums);
+			
+			cout << "小于当前数字的个数: ";
+			for (int x : result) cout << x << " ";
+			cout << endl;
+			// 输出: 4 0 1 1 3
+			
+			return 0;
+		}
+	\end{lstlisting}
+	
+	\section{总结与对比}
+	
+	\begin{greenbox}
+		\textbf{前缀和与差分的适用场景总结}
+		
+		\begin{center}
+			\begin{tabular}{|c|c|c|c|}
+				\hline
+				\textbf{技术} & \textbf{操作} & \textbf{时间复杂度} & \textbf{适用场景} \\
+				\hline
+				前缀和 & 区间查询 & $O(1)$ & 多次查询、静态数组 \\
+				\hline
+				差分 & 区间修改 & $O(1)$ & 多次修改、最终查询 \\
+				\hline
+				前缀和+哈希 & 统计特定和 & $O(n)$ & 统计满足条件的子数组个数 \\
+				\hline
+				二维前缀和 & 子矩阵查询 & $O(1)$ & 二维矩阵多次查询 \\
+				\hline
+				二维差分 & 子矩阵修改 & $O(1)$ & 二维矩阵多次修改 \\
+				\hline
+			\end{tabular}
+		\end{center}
+	\end{greenbox}
+	
+	\begin{purplebox}
+		\textbf{解题思维框架}
+		
+		遇到以下特征时，考虑前缀和/差分：
+		
+		\textbf{前缀和标志：}
+		\begin{itemize}
+			\item "区间和"、"子数组和"
+			\item "连续子数组"
+			\item "查询区间内的元素"
+			\item 需要$O(1)$回答大量区间查询
+		\end{itemize}
+		
+		\textbf{差分标志：}
+		\begin{itemize}
+			\item "区间增减"、"区间修改"
+			\item "多次修改后查询"
+			\item "航班预订"、"拼车"这类问题
+			\item 批量更新后获取最终结果
+		\end{itemize}
+		
+		\textbf{组合使用标志：}
+		\begin{itemize}
+			\item "前缀和 + 哈希表"：统计特定和的子数组
+			\item "前缀和 + 单调栈/队列"：限制条件下的最优子数组
+			\item "前缀和 + 二分"：按权重随机选择
+		\end{itemize}
+	\end{purplebox}
+	
+	\begin{redbox}
+		\textbf{常见陷阱与注意事项}
+		
+		\begin{enumerate}
+			\item \textbf{索引边界}：前缀和数组通常需要多开一位，注意pre[0]=0的处理
+			\item \textbf{溢出问题}：前缀和可能超出int范围，使用long long
+			\item \textbf{负数处理}：哈希表中查找curSum-k时，注意负数情况
+			\item \textbf{二维边界}：二维前缀和/差分注意行列的对应关系
+			\item \textbf{差分还原}：差分数组求前缀和才能还原，不要忘记最后一步
+		\end{enumerate}
+	\end{redbox}
+	
+	\section{练习题推荐}
+	
+	\begin{enumerate}[leftmargin=*]
+		\item \textbf{前缀和基础}：
+		\begin{itemize}
+			\item 区域和检索-数组不可变（LeetCode 303）
+			\item 连续子数组的和（LeetCode 523）
+			\item 和为K的子数组（LeetCode 560）
+			\item 中心下标（LeetCode 724）
+		\end{itemize}
+		\item \textbf{差分基础}：
+		\begin{itemize}
+			\item 区间加法（LeetCode 370）
+			\item 航班预订统计（LeetCode 1109）
+			\item 拼车（LeetCode 1094）
+			\item 使数组变成目标数组的最少操作次数（LeetCode 1526）
+		\end{itemize}
+		\item \textbf{二维应用}：
+		\begin{itemize}
+			\item 二维区域和检索-矩阵不可变（LeetCode 304）
+			\item 矩阵区域和（LeetCode 1314）
+			\item 最大子矩阵（LeetCode 面试题17.24）
+		\end{itemize}
+		\item \textbf{进阶挑战}：
+		\begin{itemize}
+			\item 矩形区域不超过K的最大数值和（LeetCode 363）
+			\item 和至少为K的最短子数组（LeetCode 862）
+			\item 按权重随机选择（LeetCode 528）
+			\item 连续数组（LeetCode 525）
+		\end{itemize}
+	\end{enumerate}
+	
+\end{document}
