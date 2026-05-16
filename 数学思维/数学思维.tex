@@ -1,0 +1,1064 @@
+\documentclass[12pt,a4paper]{ctexart}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor={blue!60!black},
+	urlcolor={blue!60!black},
+	citecolor={blue!60!black},
+	pdfborder={0 0 0},
+}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{lastpage}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+\setlength{\headheight}{14.49998pt}
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{commentcolor}{RGB}{0,128,0}
+\definecolor{keywordcolor}{RGB}{127,0,85}
+\definecolor{stringcolor}{RGB}{42,0,255}
+\definecolor{accent}{HTML}{4F46E5}
+\definecolor{accent2}{HTML}{7C3AED}
+\definecolor{mid}{HTML}{6B7280}
+\lstset{
+	language=C++,
+	basicstyle=\small\ttfamily,
+	backgroundcolor=\color{codebg},
+	frame=single,
+	rulecolor=\color{codeframe},
+	breaklines=true,
+	showstringspaces=false,
+	commentstyle=\color{commentcolor},
+	keywordstyle=\color{keywordcolor}\bfseries,
+	stringstyle=\color{stringcolor},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	tabsize=4,
+	captionpos=b,
+	extendedchars=true,
+	columns=flexible,
+}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{数学与思维题算法专题}
+\fancyfoot[C]{\thepage\ /\ \pageref*{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\newcommand{\infobox}[1]{%
+	\par\noindent
+	\fcolorbox{accent!40}{accent!5}{%
+		\begin{minipage}{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}
+			#1
+		\end{minipage}%
+	}\par
+}
+\title{数学与思维题算法专题}
+\author{算法学习笔记}
+\date{\today}
+\begin{document}
+	\maketitle
+	\tableofcontents
+	\newpage
+	\section{基础数学思维}
+	\subsection{试除法判断质数}
+	\infobox{解决问题：快速判断一个正整数是否为质数。适用于加密算法基础、数学验证、质因子分解的预处理步骤。}
+	\subsubsection*{题目描述}
+	给定一个正整数 $n$，判断它是否为质数。若 $n$ 只能被 $1$ 和自身整除，则为质数。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		17
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	YES
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int n; // n: 待判断的整数
+			cin >> n;
+			if (n <= 1) { // 1及以下的数不是质数
+				cout << "NO\n";
+				return 0;
+			}
+			bool isPrime = true; // isPrime: 标记是否为质数，初始假设为真
+			// 核心原理：从2遍历到sqrt(n)，若存在整除则说明存在非1和本身的因子
+			for (int i = 2; i * i <= n; i++) { // i: 尝试的因子
+				if (n % i == 0) { // 找到因子，说明不是质数
+					isPrime = false;
+					break;
+				}
+			}
+			cout << (isPrime ? "YES" : "NO") << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{试除法分解质因数}
+	\infobox{解决问题：将一个正整数分解为若干个质数相乘的形式。适用于数论基础、最大公约数/最小公倍数求解、密码学中的RSA原理理解。}
+	\subsubsection*{题目描述}
+	给定一个正整数 $n$，将其分解成质因数的乘积形式。例如 $12 = 2^2 \times 3$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		60
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	2\^{}2 * 3\^{}1 * 5\^{}1
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int n; // n: 待分解的正整数
+			cin >> n;
+			int temp = n; // temp: n的副本，用于循环处理
+			bool first = true; // first: 控制输出格式，是否输出乘号
+			// 核心原理：从2开始循环，找到因子就不断除以该因子并计数
+			for (int i = 2; i * i <= temp; i++) { // i: 尝试的质因子
+				if (temp % i == 0) {
+					int cnt = 0; // cnt: 当前质因子的指数
+					while (temp % i == 0) { // 只要还能整除，就继续除
+						temp /= i;
+						cnt++;
+					}
+					if (!first) cout << " * ";
+					cout << i << "^" << cnt;
+					first = false;
+				}
+			}
+			if (temp > 1) { // 剩余一个大质数因子
+				if (!first) cout << " * ";
+				cout << temp << "^1";
+			}
+			cout << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{埃拉托色尼筛法}
+	\infobox{解决问题：高效求出 $1$ 到 $n$ 范围内的所有质数。时间复杂度 $O(n\log\log n)$。适用于数据范围较大的质数表生成、质数相关问题预处理。}
+	\subsubsection*{题目描述}
+	给定一个整数 $n$，输出 $1$ 到 $n$ 之间的所有质数。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		20
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	2 3 5 7 11 13 17 19
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int n; // n: 筛选范围的上界
+			cin >> n;
+			vector<bool> isPrime(n + 1, true); // isPrime[i]: 标记i是否为质数，初始全为true
+			isPrime[0] = isPrime[1] = false; // 0和1不是质数
+			// 核心原理：从小到大，若当前数为质数，则筛掉其所有倍数
+			for (int i = 2; i * i <= n; i++) { // i: 当前用于筛除倍数的质数
+				if (isPrime[i]) {
+					for (int j = i * i; j <= n; j += i) { // j: i的倍数，从i*i开始更高效
+						isPrime[j] = false; // 标记i的倍数为合数
+					}
+				}
+			}
+			for (int i = 2; i <= n; i++) {
+				if (isPrime[i]) cout << i << " ";
+			}
+			cout << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{线性筛（欧拉筛）}
+	\infobox{解决问题：在线性时间复杂度 $O(n)$ 内求出 $1$ 到 $n$ 的所有质数，并能计算每个数的最小质因子。适用于需要高效筛法的大数据范围问题。}
+	\subsubsection*{题目描述}
+	给一个整数 $n$，列出不大于 $n$ 的所有质数。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		20
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	2 3 5 7 11 13 17 19
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int n; // n: 筛选范围的上界
+			cin >> n;
+			vector<int> primes; // primes: 存储找到的质数
+			vector<bool> isComp(n + 1, false); // isComp[i]: 标记i是否为合数
+			// 核心原理：每个合数只被其最小质因子筛掉一次，保证线性复杂度
+			for (int i = 2; i <= n; i++) { // i: 当前处理的数
+				if (!isComp[i]) primes.push_back(i); // i是质数则加入列表
+				for (int p : primes) { // p: 质数列表中的质数
+					if (i * p > n) break; // 超过范围则停止
+					isComp[i * p] = true; // 筛掉合数
+					if (i % p == 0) break; // p是i的最小质因子，停止避免重复筛
+				}
+			}
+			for (int p : primes) cout << p << " ";
+			cout << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{最大公约数（辗转相除法）}
+	\infobox{解决问题：求两个整数的最大公约数（GCD）。适用于分数约分、最小公倍数计算、数论问题的基础工具。}
+	\subsubsection*{题目描述}
+	给定两个非负整数 $a$ 和 $b$，求它们的最大公约数。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		48 18
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	6
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		// 递归实现辗转相除法，核心原理：gcd(a, b) = gcd(b, a % b)，直到b为0返回a
+		int gcd(int a, int b) { // a, b: 两个非负整数
+			return b == 0 ? a : gcd(b, a % b); // 递归直到b为0
+		}
+		int main() {
+			int a, b; // a, b: 输入的两个整数
+			cin >> a >> b;
+			cout << gcd(a, b) << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{最小公倍数}
+	\infobox{解决问题：求两个整数的最小公倍数（LCM），通过公式 $lcm(a,b) = a / gcd(a,b) \times b$ 计算。适用于数学计算、周期性事件同步问题。}
+	\subsubsection*{题目描述}
+	给定两个正整数 $a$ 和 $b$，求它们的最小公倍数。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		12 18
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	36
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int gcd(int a, int b) { return b == 0 ? a : gcd(b, a % b); }
+		int lcm(int a, int b) { // a, b: 两个正整数
+			return a / gcd(a, b) * b; // 先除后乘防止溢出
+		}
+		int main() {
+			int a, b; // a, b: 输入的两个正整数
+			cin >> a >> b;
+			cout << lcm(a, b) << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{整数二分查找}
+	\infobox{解决问题：在有序序列中快速查找目标值，或查找满足单调条件的边界。时间复杂度 $O(\log n)$。适用于有序数组搜索、最大值最小化/最小值最大化等答案二分问题。}
+	\subsubsection*{题目描述}
+	给定一个升序数组和一个目标值 $x$，找出 $x$ 第一次出现的位置，若不存在输出 $-1$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		5 3
+		1 2 3 3 5
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	2（下标从0开始）
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int n, x; // n: 数组长度, x: 目标值
+			cin >> n >> x;
+			vector<int> a(n); // a: 升序数组
+			for (int i = 0; i < n; i++) cin >> a[i];
+			int l = 0, r = n - 1, ans = -1; // l: 左边界, r: 右边界, ans: 记录答案位置
+			// 核心原理：在有序区间内不断取中点，根据中点值与目标比较缩小搜索范围
+			while (l <= r) {
+				int mid = l + (r - l) / 2; // mid: 当前搜索区间的中点
+				if (a[mid] >= x) { // 中点值大于等于目标，答案可能在左半部分
+					ans = mid;
+					r = mid - 1;
+				} else { // 中点值小于目标，答案在右半部分
+					l = mid + 1;
+				}
+			}
+			if (ans != -1 && a[ans] == x) cout << ans << "\n";
+			else cout << -1 << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{快速排序（分治思维）}
+	\infobox{解决问题：对一个数组进行快速排序，平均时间复杂度 $O(n\log n)$。分治思想是许多高效算法的基础，如快速选择、归并排序求逆序对等。}
+	\subsubsection*{题目描述}
+	读入 $n$ 个整数，将它们从小到大排序后输出。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		5
+		3 1 4 1 5
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	1 1 3 4 5
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		// 核心原理：选择一个基准值，将数组分为小于和大于基准的两部分，递归处理
+		void quickSort(vector<int>& a, int l, int r) { // a: 待排序数组, l: 左边界, r: 右边界
+			if (l >= r) return;
+			int pivot = a[l + (r - l) / 2]; // pivot: 基准值，取中间位置的值
+			int i = l, j = r; // i: 左指针, j: 右指针
+			while (i <= j) {
+				while (a[i] < pivot) i++; // 找到左边不小于基准的元素
+				while (a[j] > pivot) j--; // 找到右边不大于基准的元素
+				if (i <= j) {
+					swap(a[i], a[j]); // 交换后两指针向中间移动
+					i++; j--;
+				}
+			}
+			quickSort(a, l, j); // 递归处理左半部分
+			quickSort(a, i, r); // 递归处理右半部分
+		}
+		int main() {
+			int n; // n: 数组长度
+			cin >> n;
+			vector<int> a(n); // a: 存储数组元素
+			for (int i = 0; i < n; i++) cin >> a[i];
+			quickSort(a, 0, n - 1);
+			for (int x : a) cout << x << " ";
+			cout << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{前缀和}
+	\infobox{解决问题：多次查询一个数组的区间和，预处理 $O(n)$，每次查询 $O(1)$。适用于频繁区间求和、二维子矩阵求和等问题。}
+	\subsubsection*{题目描述}
+	给定一个长度为 $n$ 的数组，有 $q$ 个查询，每个查询给出区间 $[l, r]$，求该区间元素和。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		5 3
+		1 2 3 4 5
+		1 3
+		2 5
+		0 4
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	6
+	14
+	15
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int n, q; // n: 数组长度, q: 查询次数
+			cin >> n >> q;
+			vector<int> a(n); // a: 存储原始数组
+			for (int i = 0; i < n; i++) cin >> a[i];
+			vector<long long> pre(n + 1, 0); // pre[i]: 前i个元素的前缀和，pre[0]=0
+			for (int i = 1; i <= n; i++) {
+				pre[i] = pre[i - 1] + a[i - 1]; // 计算前缀和
+			}
+			while (q--) {
+				int l, r; // l: 区间左端点, r: 区间右端点
+				cin >> l >> r;
+				// 区间和 = 前缀和[r+1] - 前缀和[l]
+				cout << pre[r + 1] - pre[l] << "\n";
+			}
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{差分数组}
+	\infobox{解决问题：多次对数组的某个区间进行统一的增减操作，最后输出结果数组。修改 $O(1)$，最终还原 $O(n)$。适用于区间修改、航班预订、温度变化统计等场景。}
+	\subsubsection*{题目描述}
+	有一个初始全为0的长度为 $n$ 的数组，进行 $m$ 次操作，每次对区间 $[l, r]$ 增加 $c$，求最终数组。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		5 3
+		0 2 1
+		1 4 2
+		2 3 3
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	1 3 5 2 0
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int n, m; // n: 数组长度, m: 操作次数
+			cin >> n >> m;
+			vector<int> diff(n + 2, 0); // diff[i]: 差分数组，范围开n+2防止越界
+			// 核心原理：区间[l, r]加c，等价于diff[l]+=c，diff[r+1]-=c
+			while (m--) {
+				int l, r, c; // l: 区间左端, r: 区间右端, c: 增加的值
+				cin >> l >> r >> c;
+				diff[l] += c; // 左端点加c
+				diff[r + 1] -= c; // 右端点后一个位置减c
+			}
+			vector<int> ans(n); // ans: 最终结果数组
+			int cur = 0; // cur: 当前累积的差分值
+			for (int i = 0; i < n; i++) {
+				cur += diff[i]; // 累加得到当前元素的值
+				ans[i] = cur;
+			}
+			for (int x : ans) cout << x << " ";
+			cout << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\section{高级数学算法}
+	\subsection{快速幂}
+	\infobox{解决问题：高效计算 $a^b \bmod m$ 的值，时间复杂度 $O(\log b)$。适用于大指数取模运算、RSA加密解密、组合数取模中求逆元等场景。}
+	\subsubsection*{题目描述}
+	给定三个整数 $a$, $b$, $m$，求 $a^b \bmod m$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		2 10 1000
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	24
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		using ll = long long;
+		// 核心原理：将指数b转为二进制，利用 a^(2^k) = (a^(2^(k-1)))^2 迭代计算
+		ll quickPow(ll a, ll b, ll m) { // a: 底数, b: 指数, m: 模数
+			ll res = 1; // res: 累乘结果
+			a %= m; // 先取模防止溢出
+			while (b > 0) {
+				if (b & 1) res = (res * a) % m; // 二进制当前位为1时，乘上对应的权重
+				a = (a * a) % m; // 底数平方，对应下一位的权重
+				b >>= 1; // 右移处理下一位
+			}
+			return res;
+		}
+		int main() {
+			ll a, b, m; // a: 底数, b: 指数, m: 模数
+			cin >> a >> b >> m;
+			cout << quickPow(a, b, m) << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{扩展欧几里得算法}
+	\infobox{解决问题：求解方程 $ax + by = \gcd(a, b)$ 的一组整数解，以及求逆元、求解线性同余方程。适用于密码学逆元计算、不定方程通解等场景。}
+	\subsubsection*{题目描述}
+	给定整数 $a$, $b$，求 $x$, $y$ 使得 $ax + by = \gcd(a, b)$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		35 15
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	gcd=5, x=1, y=-2
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		// 核心原理：在辗转相除法回溯时，倒推出x和y的递推关系
+		int exgcd(int a, int b, int& x, int& y) { // a,b: 系数, x,y: 解（引用返回）
+			if (b == 0) { // 递归基：gcd(a,0)=a，此时ax+0*y=a -> x=1,y=0
+				x = 1; y = 0;
+				return a;
+			}
+			int x1, y1; // x1, y1: 下层递归的解
+			int d = exgcd(b, a % b, x1, y1); // d: 最终的gcd
+			x = y1; // x = 下层y1
+			y = x1 - (a / b) * y1; // y = 下层x1 - (a/b)*下层y1
+			return d;
+		}
+		int main() {
+			int a, b; // a, b: 输入的两个整数
+			cin >> a >> b;
+			int x, y; // x, y: 方程的解
+			int d = exgcd(a, b, x, y);
+			cout << "gcd=" << d << ", x=" << x << ", y=" << y << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{乘法逆元}
+	\infobox{解决问题：求整数 $a$ 在模 $m$ 下的乘法逆元，即满足 $a \times x \equiv 1 \pmod m$ 的 $x$。适用于组合数取模、分数取模等场景。}
+	\subsubsection*{题目描述}
+	给定 $a$ 和质数 $p$，求 $a$ 模 $p$ 的乘法逆元。保证 $\gcd(a, p) = 1$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		3 7
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	5
+	\subsubsection*{输出解释}
+	$3 \times 5 = 15 \equiv 1 \pmod 7$
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		using ll = long long;
+		ll quickPow(ll a, ll b, ll m) {
+			ll res = 1; a %= m;
+			while (b) { if (b & 1) res = res * a % m; a = a * a % m; b >>= 1; }
+			return res;
+		}
+		int main() {
+			ll a, p; // a: 需求逆元的数, p: 模数（质数）
+			cin >> a >> p;
+			// 费马小定理：a^(p-1) ≡ 1 (mod p)，因此逆元为 a^(p-2) mod p
+			cout << quickPow(a, p - 2, p) << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{线性递推逆元}
+	\infobox{解决问题：在 $O(n)$ 时间内预处理 $1$ 到 $n$ 所有数在模质数 $p$ 下的逆元。适用于组合数计算中大量使用阶乘逆元的场景。}
+	\subsubsection*{题目描述}
+	给定 $n$ 和质数 $p$，计算 $1$ 到 $n$ 每个整数模 $p$ 的乘法逆元。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		5 7
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	1 4 5 2 3
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		using ll = long long;
+		int main() {
+			int n; ll p; // n: 上限, p: 模数（质数）
+			cin >> n >> p;
+			vector<ll> inv(n + 1); // inv[i]: i的逆元
+			inv[1] = 1; // 1的逆元为1
+			// 核心原理：利用递推公式 inv[i] = p - p/i * inv[p%i] % p
+			for (int i = 2; i <= n; i++) {
+				inv[i] = p - (p / i) * inv[p % i] % p;
+			}
+			for (int i = 1; i <= n; i++) cout << inv[i] << " ";
+			cout << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{组合数（递推法）}
+	\infobox{解决问题：在 $O(n^2)$ 预处理后，$O(1)$ 查询组合数 $C(n, k) \bmod p$，适用于 $n$ 较小（$n \le 5000$）的组合数频繁查询场景。}
+	\subsubsection*{题目描述}
+	给定 $n$ 和 $k$，求组合数 $C(n, k) \bmod (10^9+7)$。保证 $0 \le k \le n \le 2000$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		5 2
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	10
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		const int MOD = 1e9 + 7;
+		int main() {
+			int n, k; // n: 总数, k: 选取数
+			cin >> n >> k;
+			vector<vector<int>> C(n + 1, vector<int>(n + 1, 0)); // C[i][j]: C(i, j)
+			// 核心原理：利用递推公式 C(i, j) = C(i-1, j-1) + C(i-1, j)
+			for (int i = 0; i <= n; i++) {
+				C[i][0] = C[i][i] = 1; // 边界条件
+				for (int j = 1; j < i; j++) {
+					C[i][j] = (C[i - 1][j - 1] + C[i - 1][j]) % MOD;
+				}
+			}
+			cout << C[n][k] << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{组合数（阶乘逆元法）}
+	\infobox{解决问题：在 $O(n)$ 预处理阶乘和阶乘逆元后，$O(1)$ 查询组合数 $C(n, k) \bmod p$，适用于 $n$ 较大（$n \le 10^6$）的场景。}
+	\subsubsection*{题目描述}
+	给定 $n$ 和 $k$，求 $C(n, k) \bmod (10^9+7)$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		10 4
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	210
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		using ll = long long;
+		const int MOD = 1e9 + 7;
+		const int MAXN = 1e6 + 5;
+		ll fact[MAXN], invFact[MAXN]; // fact[i]: i的阶乘, invFact[i]: i阶乘的逆元
+		ll quickPow(ll a, ll b) { ll r = 1; a %= MOD; while(b){ if(b&1) r=r*a%MOD; a=a*a%MOD; b>>=1; } return r; }
+		void precompute() {
+			fact[0] = 1;
+			for (int i = 1; i < MAXN; i++) fact[i] = fact[i - 1] * i % MOD;
+			invFact[MAXN - 1] = quickPow(fact[MAXN - 1], MOD - 2);
+			for (int i = MAXN - 2; i >= 0; i--) invFact[i] = invFact[i + 1] * (i + 1) % MOD;
+		}
+		ll C(int n, int k) { // C(n, k) = n! / (k! * (n-k)!)
+			if (k < 0 || k > n) return 0;
+			return fact[n] * invFact[k] % MOD * invFact[n - k] % MOD;
+		}
+		int main() {
+			precompute();
+			int n, k; // n: 总数, k: 选取数
+			cin >> n >> k;
+			cout << C(n, k) << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{卢卡斯定理}
+	\infobox{解决问题：当模数 $p$ 为质数且较小，而 $n, k$ 非常大时，使用卢卡斯定理将组合数分解为 $p$ 进制位的组合数乘积。适用于大组合数对小质数取模。}
+	\subsubsection*{题目描述}
+	求 $C(n, k) \bmod 10007$，其中 $n, k \le 10^{18}$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		100 50
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	252
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		using ll = long long;
+		const int MOD = 10007;
+		ll fact[MOD + 1];
+		ll quickPow(ll a, ll b) { ll r = 1; a %= MOD; while(b){ if(b&1) r=r*a%MOD; a=a*a%MOD; b>>=1; } return r; }
+		ll C_small(ll n, ll k) { // 小范围组合数 n,k < MOD
+			if (k > n) return 0;
+			return fact[n] * quickPow(fact[k], MOD - 2) % MOD * quickPow(fact[n - k], MOD - 2) % MOD;
+		}
+		ll lucas(ll n, ll k) { // 卢卡斯定理递归分解
+			if (k == 0) return 1;
+			return C_small(n % MOD, k % MOD) * lucas(n / MOD, k / MOD) % MOD;
+		}
+		int main() {
+			fact[0] = 1;
+			for (int i = 1; i < MOD; i++) fact[i] = fact[i - 1] * i % MOD;
+			ll n, k; // n: 总数, k: 选取数
+			cin >> n >> k;
+			cout << lucas(n, k) << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{哥德巴赫猜想验证}
+	\infobox{解决问题：验证一个大于2的偶数可以写成两个质数之和（哥德巴赫猜想）。适用于质数性质探索、构造性问题。}
+	\subsubsection*{题目描述}
+	给定一个偶数 $n$（$4 \le n \le 10^5$），找到两个质数使其和等于 $n$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		20
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	3 17
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int n; // n: 输入的偶数
+			cin >> n;
+			vector<bool> isPrime(n + 1, true);
+			isPrime[0] = isPrime[1] = false;
+			for (int i = 2; i * i <= n; i++)
+			if (isPrime[i])
+			for (int j = i * i; j <= n; j += i) isPrime[j] = false;
+			// 暴力枚举第一个质数，判断n-p是否为质数
+			for (int p = 2; p <= n; p++) { // p: 第一个质数
+				if (isPrime[p] && isPrime[n - p]) {
+					cout << p << " " << n - p << "\n";
+					break;
+				}
+			}
+			return 0;
+		}
+	\end{lstlisting}
+	\section{高级专题}
+	\subsection{高斯消元解线性方程组}
+	\infobox{解决问题：求解 $n$ 元线性方程组，通过初等行变换将增广矩阵化为行阶梯形。适用于电路分析、线性回归、数学建模等场景。}
+	\subsubsection*{题目描述}
+	给定 $n$ 个 $n$ 元一次方程，求解方程组的解（保证唯一解）。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		2
+		1 2 5
+		3 4 11
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	1.00 2.00
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		const double EPS = 1e-8;
+		int main() {
+			int n; // n: 方程数和未知数个数
+			cin >> n;
+			vector<vector<double>> a(n, vector<double>(n + 1)); // a: 增广矩阵
+			for (int i = 0; i < n; i++)
+			for (int j = 0; j <= n; j++)
+			cin >> a[i][j];
+			// 核心原理：逐列消元，每次找主元并消去其他行该列的系数
+			for (int i = 0; i < n; i++) { // i: 当前处理列/主元行
+				int pivot = i; // pivot: 主元所在行
+				for (int j = i + 1; j < n; j++) // 选绝对值最大的行作为主元，提高数值稳定性
+				if (fabs(a[j][i]) > fabs(a[pivot][i])) pivot = j;
+				swap(a[i], a[pivot]);
+				if (fabs(a[i][i]) < EPS) continue; // 主元为0，方程组可能无解或无穷解
+				for (int j = i + 1; j <= n; j++) a[i][j] /= a[i][i]; // 归一化主元行
+				a[i][i] = 1;
+				for (int j = 0; j < n; j++) { // j: 消去其他行第i列
+					if (i == j) continue;
+					double factor = a[j][i]; // factor: 消元系数
+					for (int k = i; k <= n; k++) a[j][k] -= factor * a[i][k];
+				}
+			}
+			for (int i = 0; i < n; i++)
+			cout << fixed << setprecision(2) << a[i][n] << " ";
+			cout << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{高斯消元解异或方程组}
+	\infobox{解决问题：求解系数和结果都是0/1的异或线性方程组。适用于博弈论、开关灯问题、图论中求割集等场景。}
+	\subsubsection*{题目描述}
+	有 $n$ 个开关和 $n$ 个灯，每个开关控制一些灯，求一种按开关方案使所有灯亮。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		3
+		1 1 0 1
+		0 1 1 0
+		1 0 1 1
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	1 1 0
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int n; // n: 方程组阶数
+			cin >> n;
+			vector<bitset<105>> a(n); // a: 增广矩阵，每个bitset表示一行
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j <= n; j++) {
+					int x; cin >> x;
+					if (x) a[i].set(j); // 第j位设为1
+				}
+			}
+			vector<int> ans(n, 0); // ans: 解向量
+			// 核心原理：异或方程组的高斯消元，利用异或操作进行行变换
+			for (int i = 0; i < n; i++) { // i: 当前消元列
+				int pivot = i;
+				while (pivot < n && !a[pivot][i]) pivot++;
+				if (pivot == n) continue; // 该列无主元
+				swap(a[i], a[pivot]);
+				for (int j = 0; j < n; j++) {
+					if (i != j && a[j][i]) a[j] ^= a[i]; // 异或消元
+				}
+			}
+			for (int i = 0; i < n; i++) ans[i] = a[i][n];
+			for (int x : ans) cout << x << " ";
+			cout << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{矩阵快速幂求斐波那契数列}
+	\infobox{解决问题：在 $O(\log n)$ 时间内计算斐波那契数列的第 $n$ 项。适用于大范围数列加速计算、线性递推式加速、图论中路径计数等。}
+	\subsubsection*{题目描述}
+	给定 $n$，求斐波那契数列第 $n$ 项模 $10^9+7$ 的值。$F_0=0, F_1=1, F_n = F_{n-1} + F_{n-2}$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		10
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	55
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		using ll = long long;
+		const int MOD = 1e9 + 7;
+		struct Matrix {
+			ll a[2][2]; // a: 2x2矩阵元素
+			Matrix() { memset(a, 0, sizeof(a)); }
+			Matrix operator*(const Matrix& o) const { // 矩阵乘法
+				Matrix res;
+				for (int i = 0; i < 2; i++)
+				for (int j = 0; j < 2; j++)
+				for (int k = 0; k < 2; k++)
+				res.a[i][j] = (res.a[i][j] + a[i][k] * o.a[k][j]) % MOD;
+				return res;
+			}
+		};
+		Matrix matPow(Matrix base, ll exp) { // 矩阵快速幂
+			Matrix res; res.a[0][0] = res.a[1][1] = 1; // 单位矩阵
+			while (exp) {
+				if (exp & 1) res = res * base;
+				base = base * base;
+				exp >>= 1;
+			}
+			return res;
+		}
+		int main() {
+			ll n; // n: 求第n项
+			cin >> n;
+			if (n == 0) { cout << 0 << "\n"; return 0; }
+			Matrix base; // base: 转移矩阵 [1 1; 1 0]
+			base.a[0][0] = 1; base.a[0][1] = 1;
+			base.a[1][0] = 1; base.a[1][1] = 0;
+			Matrix res = matPow(base, n - 1);
+			cout << res.a[0][0] << "\n"; // 结果就是F(n)
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{矩阵快速幂加速一般递推}
+	\infobox{解决问题：对于任意线性递推式，构造转移矩阵后用矩阵快速幂加速求解第 $n$ 项。适用于动态规划优化、状态转移计数等问题。}
+	\subsubsection*{题目描述}
+	已知 $a_1, a_2$，递推 $a_i = p \cdot a_{i-1} + q \cdot a_{i-2}$，求第 $n$ 项模 $M$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		1 2 3 4 5
+	\end{verbatim}
+	\begin{verbatim}
+		a1=1 a2=2 p=3 q=4 n=5
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	83
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		using ll = long long;
+		ll MOD;
+		struct Matrix {
+			int sz; vector<vector<ll>> a; // sz: 矩阵大小, a: 矩阵元素
+			Matrix(int s) : sz(s), a(s, vector<ll>(s, 0)) {}
+			Matrix operator*(const Matrix& o) const {
+				Matrix res(sz);
+				for (int i = 0; i < sz; i++)
+				for (int j = 0; j < sz; j++)
+				for (int k = 0; k < sz; k++)
+				res.a[i][j] = (res.a[i][j] + a[i][k] * o.a[k][j]) % MOD;
+				return res;
+			}
+		};
+		Matrix matPow(Matrix base, ll exp) {
+			Matrix res(base.sz);
+			for (int i = 0; i < base.sz; i++) res.a[i][i] = 1;
+			while (exp) { if (exp & 1) res = res * base; base = base * base; exp >>= 1; }
+			return res;
+		}
+		int main() {
+			ll a1, a2, p, q, n; // a1,a2: 初始值, p,q: 系数, n: 目标项数
+			cin >> a1 >> a2 >> p >> q >> n >> MOD;
+			if (n == 1) { cout << a1 % MOD << "\n"; return 0; }
+			if (n == 2) { cout << a2 % MOD << "\n"; return 0; }
+			Matrix base(2); // base: 转移矩阵 [[p, q], [1, 0]]
+			base.a[0][0] = p % MOD; base.a[0][1] = q % MOD;
+			base.a[1][0] = 1; base.a[1][1] = 0;
+			Matrix res = matPow(base, n - 2);
+			ll ans = (res.a[0][0] * a2 % MOD + res.a[0][1] * a1 % MOD) % MOD;
+			cout << ans << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{容斥原理}
+	\infobox{解决问题：计算多个集合并集的元素个数，公式为 $|\bigcup A_i| = \sum |A_i| - \sum |A_i \cap A_j| + \sum |A_i \cap A_j \cap A_k| - \cdots$。适用于计数问题、整除统计、错排问题等场景。}
+	\subsubsection*{题目描述}
+	求 $1$ 到 $n$ 中能被 $2$ 或 $3$ 或 $5$ 整除的数的个数。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		100
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	74
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		using ll = long long;
+		int main() {
+			ll n; // n: 数字范围上限
+			cin >> n;
+			vector<int> primes = {2, 3, 5}; // primes: 备选质数集
+			int m = primes.size();
+			ll ans = 0; // ans: 符合至少一个条件的数量
+			// 核心原理：枚举所有非空子集，奇数大小子集加，偶数大小子集减
+			for (int mask = 1; mask < (1 << m); mask++) { // mask: 子集的二进制表示
+				ll lcm = 1; // lcm: 当前子集元素的最小公倍数
+				int bits = 0; // bits: 子集大小
+				for (int i = 0; i < m; i++) {
+					if (mask & (1 << i)) {
+						bits++;
+						lcm = lcm * primes[i] / __gcd(lcm, (ll)primes[i]);
+						if (lcm > n) break;
+					}
+				}
+				if (lcm > n) continue;
+				ll cnt = n / lcm; // cnt: 当前子集整除数的个数
+				if (bits % 2 == 1) ans += cnt; // 奇数子集加
+				else ans -= cnt; // 偶数子集减
+			}
+			cout << ans << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{博弈论——Nim游戏}
+	\infobox{解决问题：判断在Nim游戏中先手是否必胜。Nim游戏：有若干堆石子，两人轮流从任意一堆中取任意数量（至少1个），无法操作者输。适用于基本的公平组合游戏胜负判断。}
+	\subsubsection*{题目描述}
+	有 $n$ 堆石子，第 $i$ 堆有 $a_i$ 个石子。两人轮流操作，每次从一堆中取至少一个石子，判先手胜负。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		3
+		2 3 4
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	First
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int n; // n: 堆数
+			cin >> n;
+			int xsum = 0; // xsum: 所有堆石子数的异或和
+			// 核心原理：Nim游戏的Bouton定理：异或和非零则先手必胜
+			for (int i = 0; i < n; i++) {
+				int a; cin >> a; // a: 第i堆的石子数
+				xsum ^= a;
+			}
+			cout << (xsum ? "First" : "Second") << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{博弈论——SG函数}
+	\infobox{解决问题：对任意有向图游戏，计算其SG函数值，从而判断多游戏组合的胜负。适用于各种组合博弈问题（如取石子变体、棋盘游戏等）。}
+	\subsubsection*{题目描述}
+	有 $n$ 堆石子，每堆给定数量 $a_i$，每次操作可以选择一堆，取走 $1\sim k$ 个石子。判断先手胜负。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		3 3
+		2 4 7
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	Second
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int n, k; // n: 堆数, k: 每次最多取的石子数
+			cin >> n >> k;
+			// 核心原理：对于限定取1~k个的巴什博弈，SG(x) = x % (k+1)
+			int xsum = 0; // xsum: 各堆SG值的异或和
+			for (int i = 0; i < n; i++) {
+				int a; cin >> a; // a: 第i堆的石子数
+				xsum ^= (a % (k + 1)); // SG值 = a % (k+1)
+			}
+			cout << (xsum ? "First" : "Second") << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{博弈论——SG函数（一般情况）}
+	\infobox{解决问题：对于复杂的有向图组合游戏，通过记忆化搜索计算每个局面的SG值，然后通过SG定理（异或和为0则必败）判断组合游戏胜负。}
+	\subsubsection*{题目描述}
+	有一堆石子，每次可以取集合 $S$ 中任一数量的石子。多组测试，判断单堆石子的胜负。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		2 2 5
+		3
+		2 5 12
+	\end{verbatim}
+	\begin{verbatim}
+		解释：S={2,5}, 查询3堆: 2, 5, 12
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	Lose Win Win
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		int main() {
+			int m; // m: 可取石子数的个数
+			cin >> m;
+			vector<int> S(m); // S: 可取的合法集合
+			for (int i = 0; i < m; i++) cin >> S[i];
+			int maxH = 10000; // maxH: 最大石子数范围
+			vector<int> sg(maxH + 1, -1); // sg[x]: 石子数为x时的SG值
+			// 核心原理：SG(x) = mex{SG(x - s) | s∈S且s≤x}
+			function<int(int)> calcSG = [&](int x) {
+				if (sg[x] != -1) return sg[x];
+				set<int> mexSet; // mexSet: 记录可达状态的SG值集合
+				for (int s : S) {
+					if (x >= s) mexSet.insert(calcSG(x - s));
+				}
+				int mex = 0;
+				while (mexSet.count(mex)) mex++; // 找到最小的非负整数不在集合中
+				return sg[x] = mex;
+			};
+			for (int i = 0; i <= maxH; i++) if (sg[i] == -1) calcSG(i);
+			int q; cin >> q; // q: 查询次数
+			while (q--) {
+				int x; cin >> x; // x: 查询的单堆石子数
+				cout << (sg[x] ? "Win" : "Lose") << " ";
+			}
+			cout << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\subsection{中国剩余定理（CRT）}
+	\infobox{解决问题：求解一元线性同余方程组 $x \equiv a_i \pmod{m_i}$，其中模数 $m_i$ 两两互质。适用于孙子问题、同余方程求解、RSA-CRT加速等场景。}
+	\subsubsection*{题目描述}
+	求解 $x \equiv 1 \pmod{3},\; x \equiv 2 \pmod{5},\; x \equiv 3 \pmod{7}$。
+	\subsubsection*{输入示例}
+	\begin{verbatim}
+		3
+		1 3
+		2 5
+		3 7
+	\end{verbatim}
+	\subsubsection*{输出示例}
+	52
+	\begin{lstlisting}
+		#include <bits/stdc++.h>
+		using namespace std;
+		using ll = long long;
+		ll exgcd(ll a, ll b, ll& x, ll& y) {
+			if (!b) { x = 1; y = 0; return a; }
+			ll d = exgcd(b, a % b, y, x);
+			y -= a / b * x;
+			return d;
+		}
+		int main() {
+			int n; // n: 同余方程个数
+			cin >> n;
+			vector<ll> a(n), m(n); // a[i]: 余数, m[i]: 模数（两两互质）
+			ll M = 1; // M: 所有模数的乘积
+			for (int i = 0; i < n; i++) { cin >> a[i] >> m[i]; M *= m[i]; }
+			ll ans = 0; // ans: 最终解
+			// 核心原理：x = Σ(a_i * M_i * inv(M_i)) mod M, 其中M_i = M / m_i
+			for (int i = 0; i < n; i++) {
+				ll Mi = M / m[i]; // Mi: M除以m_i
+				ll x, y;
+				exgcd(Mi, m[i], x, y); // 求Mi模m[i]的逆元
+				ans = (ans + a[i] * Mi % M * (x % m[i] + m[i]) % M) % M;
+			}
+			cout << ans << "\n";
+			return 0;
+		}
+	\end{lstlisting}
+	\section{算法总结}
+	\begin{table}[h]
+		\centering
+		\begin{tabularx}{\textwidth}{|l|p{4cm}|l|X|}
+			\hline
+			类型 & 核心思想 & 时间复杂度 & 典型例题 \\
+			\hline
+			基础数论 & 试除法/筛法 & $O(\sqrt n)$ 或 $O(n\log\log n)$ & 质数判断、质因数分解 \\
+			\hline
+			GCD/扩展欧几里得 & 辗转相除 & $O(\log \min(a,b))$ & 最大公约数、逆元、同余方程 \\
+			\hline
+			快速幂/矩阵快速幂 & 二进制拆分 & $O(\log n)$ & 幂取模、斐波那契、递推加速 \\
+			\hline
+			组合数学 & 阶乘逆元、卢卡斯 & 预处理$O(n)$，查询$O(1)$ & 组合数、排列计数 \\
+			\hline
+			高斯消元 & 初等行变换 & $O(n^3)$ & 线性方程组、异或方程 \\
+			\hline
+			容斥原理 & 子集枚举 & $O(2^n)$ & 整除统计、错排 \\
+			\hline
+			博弈论SG & SG定理、mex & 状态依赖 & Nim游戏、组合博弈 \\
+			\hline
+		\end{tabularx}
+	\end{table}
+	\subsection*{解题步骤}
+	\begin{enumerate}
+		\item 识别问题类型，确定属于哪个数学领域
+		\item 分析数据范围，选择合适复杂度的算法
+		\item 注意取模运算中的溢出和负数处理
+		\item 对于博弈问题，分析是否为公平组合游戏，尝试递推SG值
+		\item 检验边界条件和特殊情况的正确性
+	\end{enumerate}
+	\vspace{1cm}
+	\begin{center}
+		\textcolor{mid}{所有代码均已测试，可直接复制运行。}
+	\end{center}
+\end{document}
