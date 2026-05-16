@@ -1,0 +1,87 @@
+\documentclass[12pt,a4paper]{ctexart}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor={blue!60!black},
+	urlcolor={blue!60!black},
+	citecolor={blue!60!black},
+	pdfborder={0 0 0},
+}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{lastpage}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{booktabs}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+% ==================== 颜色定义 ====================
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{commentcolor}{RGB}{0,128,0}
+\definecolor{keywordcolor}{RGB}{127,0,85}
+\definecolor{stringcolor}{RGB}{42,0,255}
+\definecolor{accent}{HTML}{4F46E5}
+\definecolor{accent2}{HTML}{7C3AED}
+\definecolor{mid}{HTML}{6B7280}
+
+% ==================== 代码样式 ====================
+\lstset{
+	language=C++,
+	basicstyle=\small\ttfamily,
+	backgroundcolor=\color{codebg},
+	frame=single,
+	rulecolor=\color{codeframe},
+	breaklines=true,
+	showstringspaces=false,
+	commentstyle=\color{commentcolor},
+	keywordstyle=\color{keywordcolor}\bfseries,
+	stringstyle=\color{stringcolor},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	tabsize=4,
+	captionpos=b,
+	extendedchars=true,
+	columns=flexible,
+}
+
+% ==================== 页眉页脚 ====================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{并查集算法专题}
+\fancyfoot[C]{\thepage\ /\ \pageref*{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ==================== 信息框 ====================
+\newcommand{\infobox}[1]{%
+	\par\noindent
+	\fcolorbox{accent!40}{accent!5}{%
+		\begin{minipage}{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}
+			#1
+		\end{minipage}%
+	}\par
+}
+
+% ==================== 标题信息 ====================
+\title{并查集算法专题}
+\author{圣文卓}
+\date{\today}
+
+% ==================== 正文开始 ====================
+\begin{document}
+	
+	\maketitle
+	\tableofcontents
+	\newpage
+	
+	% ==================== 章节内容在此添加 ====================
+	
+\end{document}
