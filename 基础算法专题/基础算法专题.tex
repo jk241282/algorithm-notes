@@ -1,0 +1,1327 @@
+\documentclass[12pt,a4paper]{ctexart}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor={blue!60!black},
+    urlcolor={blue!60!black},
+    citecolor={blue!60!black},
+    pdfborder={0 0 0},
+}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{lastpage}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{booktabs}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+% ==================== 颜色定义 ====================
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{commentcolor}{RGB}{0,128,0}
+\definecolor{keywordcolor}{RGB}{127,0,85}
+\definecolor{stringcolor}{RGB}{42,0,255}
+\definecolor{accent}{HTML}{4F46E5}
+\definecolor{accent2}{HTML}{7C3AED}
+\definecolor{mid}{HTML}{6B7280}
+
+% ==================== 代码样式 ====================
+\lstset{
+    language=C++,
+    basicstyle=\small\ttfamily,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{codeframe},
+    breaklines=true,
+    showstringspaces=false,
+    commentstyle=\color{commentcolor},
+    keywordstyle=\color{keywordcolor}\bfseries,
+    stringstyle=\color{stringcolor},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    tabsize=4,
+    captionpos=b,
+    extendedchars=true,
+    columns=flexible,
+}
+
+% ==================== 页眉页脚 ====================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{基础算法专题}
+\fancyfoot[C]{\thepage\ /\ \pageref*{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ==================== 信息框 ====================
+\newcommand{\infobox}[1]{%
+    \par\noindent
+    \fcolorbox{accent!40}{accent!5}{%
+        \begin{minipage}{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}
+            #1
+        \end{minipage}%
+    }\par
+}
+
+% ==================== 标题信息 ====================
+\title{基础算法专题\\[5pt]
+\large 枚举\ \textbullet\ 贪心\ \textbullet\ 二分/三分\ \textbullet\ 前缀和与差分\ \textbullet\ 排序}
+\author{圣文卓}
+\date{\today}
+
+% ==================== 正文开始 ====================
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% ================================================================
+%                        第一章：枚举
+% ================================================================
+\section{枚举}
+枚举（Enumeration）是最基础的算法思想：遍历解空间中的所有候选解，逐一检验是否满足条件。适用于数据规模较小、无法或不需要推导数学公式的情形。核心在于\textbf{控制枚举范围}和\textbf{剪枝优化}，避免不必要的循环。
+
+% -------- 1.1 子集枚举 --------
+\subsection{子集枚举（二进制枚举）}
+\textbf{适用场景：} 从 $n$ 个元素构成的集合中，枚举所有可能的子集（共 $2^n$ 个），每个元素选或不选，适合 $n \le 20$。
+
+\textbf{题目：} 给定一个含有 $n$ 个整数的数组，输出所有子集的元素和。
+
+\begin{lstlisting}[caption={二进制枚举所有子集}]
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+    int n;                          // n: 数组元素个数
+    cin >> n;
+    vector<int> a(n);               // a[i]: 第i个元素的值
+    for (int i = 0; i < n; i++) cin >> a[i];
+    // 枚举 [0, 2^n - 1] 之间的每一个二进制掩码
+    int total = 1 << n;             // total = 2^n, 子集总数
+    for (int mask = 0; mask < total; mask++) {
+        int sum = 0;                // sum: 当前子集的元素和
+        // 检查 mask 的每一位，第 j 位为 1 表示选择 a[j]
+        for (int j = 0; j < n; j++) {
+            if (mask & (1 << j)) {  // 判断 mask 的第 j 位是否为 1
+                sum += a[j];
+            }
+        }
+        cout << "subset " << mask << " sum = " << sum << endl;
+    }
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 1.2 全排列枚举 --------
+\subsection{全排列枚举（DFS回溯）}
+\textbf{适用场景：} 生成 $1 \sim n$ 的所有排列，或对数组元素进行全排列后暴力验证，适合 $n \le 10$。
+
+\textbf{题目：} 输出 $1 \sim n$ 的所有全排列。
+
+\begin{lstlisting}[caption={DFS回溯生成全排列}]
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int n;                              // n: 排列长度
+vector<int> path;                   // path: 当前排列路径
+vector<bool> used;                  // used[i]: 数字 i 是否已被使用
+
+// 原理：深度优先搜索，每次从未使用的数字中选一个加入当前路径
+void dfs() {
+    if ((int)path.size() == n) {    // 找到一个完整排列
+        for (int x : path) cout << x << " ";
+        cout << endl;
+        return;
+    }
+    for (int i = 1; i <= n; i++) {  // 按字典序尝试每个数字
+        if (used[i]) continue;      // 已使用则跳过（剪枝）
+        used[i] = true;             // 标记使用
+        path.push_back(i);          // 加入路径
+        dfs();                      // 递归搜索下一层
+        path.pop_back();            // 回溯：撤销选择
+        used[i] = false;            // 回溯：恢复未使用状态
+    }
+}
+
+int main() {
+    cin >> n;
+    used.assign(n + 1, false);
+    dfs();
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 1.3 组合枚举 --------
+\subsection{组合枚举}
+\textbf{适用场景：} 从 $n$ 个元素中选出恰好 $k$ 个，需要枚举所有组合方案，适合 $n \le 25$。
+
+\textbf{题目：} 从 $1 \sim n$ 中选出 $k$ 个数，按字典序输出所有组合。
+
+\begin{lstlisting}[caption={DFS枚举组合（字典序）}]
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int n, k;                           // n: 总数, k: 选取个数
+vector<int> comb;                   // comb: 当前组合
+
+// 原理：每次从 start 开始选数，保证组合内部递增，避免重复
+void dfs(int start) {
+    if ((int)comb.size() == k) {    // 已选够 k 个，输出
+        for (int x : comb) cout << x << " ";
+        cout << endl;
+        return;
+    }
+    // 剪枝：剩余可选数字数量不足时提前返回
+    // 还需要选 k-comb.size() 个，最多能从 n 选到 start
+    for (int i = start; i <= n - (k - (int)comb.size()) + 1; i++) {
+        comb.push_back(i);
+        dfs(i + 1);                 // 下一层从 i+1 开始，保证递增
+        comb.pop_back();            // 回溯
+    }
+}
+
+int main() {
+    cin >> n >> k;
+    dfs(1);
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 1.4 四平方和 --------
+\subsection{四平方和（枚举 + 哈希优化）}
+\textbf{适用场景：} 将枚举从 $O(n^3)$ 或 $O(n^4)$ 优化到 $O(n^2)$，通过预处理一部分结果并用哈希表或数组存储，将"枚举前半 + 查找后半"的思想用于降低复杂度。
+
+\textbf{题目：} 每个正整数都可以表示为至多 $4$ 个正整数的平方和。给定 $N \le 5\times 10^6$，求字典序最小的 $a,b,c,d$ 使得 $a^2+b^2+c^2+d^2=N$ 且 $a\le b\le c\le d$。
+
+\begin{lstlisting}[caption={四平方和——枚举前两项 + 哈希查表}]
+#include <iostream>
+#include <cmath>
+#include <cstring>
+using namespace std;
+
+const int MAXN = 5000010;           // MAXN: 根据 N 上限设定
+int h[MAXN];                        // h[x]: 当两数平方和为 x 时，较小的那个数
+
+int main() {
+    int N;                          // N: 目标正整数
+    cin >> N;
+    memset(h, -1, sizeof(h));       // -1 表示未出现过
+    // 预处理：枚举后两个数的平方和 c^2 + d^2
+    for (int c = 0; c * c <= N; c++) {
+        for (int d = c; c * c + d * d <= N; d++) { // d 从 c 开始保证 c<=d
+            int sum = c * c + d * d;
+            if (h[sum] == -1) {     // 只记录第一次出现（保证字典序最小）
+                h[sum] = c;         // 存储较小的数 c，较大数 d 可由 sum-c^2 算出
+            }
+        }
+    }
+    // 枚举前两个数 a^2 + b^2，查表匹配后两个数
+    for (int a = 0; a * a <= N; a++) {
+        for (int b = a; a * a + b * b <= N; b++) {
+            int rest = N - a * a - b * b; // rest: 剩余需要凑的值
+            if (rest < 0) break;
+            if (h[rest] == -1) continue;  // 无法凑出剩余值
+            int c = h[rest];        // c: 查表得到的第三个数
+            int d = sqrt(rest - c * c);   // d: 由 rest - c^2 开方得到
+            cout << a << " " << b << " " << c << " " << d << endl;
+            return 0;               // 字典序最小，找到即退出
+        }
+    }
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 1.5 百钱百鸡 --------
+\subsection{百钱百鸡（经典枚举优化）}
+\textbf{适用场景：} 多元一次不定方程求整数解，通过减少变量个数将多重循环降为单重循环，适用于小数据范围的约束满足问题。
+
+\textbf{题目：} 公鸡 $5$ 元一只，母鸡 $3$ 元一只，小鸡 $1$ 元三只。用 $100$ 元买 $100$ 只鸡，求所有购买方案。
+
+\begin{lstlisting}[caption={百钱百鸡——消元降维枚举}]
+#include <iostream>
+using namespace std;
+
+int main() {
+    // 原理：设公鸡 x 只，母鸡 y 只，小鸡 z 只
+    // x + y + z = 100, 5x + 3y + z/3 = 100 且 z 是 3 的倍数
+    // 由两式消去 z，得 7x + 4y = 100，枚举 x 即可确定 y, z
+    for (int x = 0; x <= 20; x++) { // x: 公鸡数，5x<=100 故 x<=20
+        int y = (100 - 7 * x) / 4;  // y: 母鸡数，由方程解出
+        int z = 100 - x - y;        // z: 小鸡数
+        // 验证方程是否成立且 y,z 为非负整数
+        if (y >= 0 && z >= 0 && z % 3 == 0 && 5*x + 3*y + z/3 == 100) {
+            cout << "cock=" << x << " hen=" << y << " chick=" << z << endl;
+        }
+    }
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 1.6 回文日期 --------
+\subsection{回文日期}
+\textbf{适用场景：} 枚举日期或回文数，通过生成而非逐一判定的方式缩小枚举范围。适用于日期/数字回文类问题。
+
+\textbf{题目：} 给定起始日期和终止日期（8位数字），求在此范围内的回文日期个数。
+
+\begin{lstlisting}[caption={回文日期——枚举前四位生成回文}]
+#include <iostream>
+using namespace std;
+
+int days[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+// days[m]: 平年第 m 月的天数
+
+// 判断是否为闰年
+bool isLeap(int y) {
+    return (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0);
+}
+
+// 判断日期是否合法
+bool isValid(int y, int m, int d) {
+    if (m < 1 || m > 12) return false;   // 月份非法
+    int maxd = days[m];                  // maxd: 当月最大天数
+    if (m == 2 && isLeap(y)) maxd = 29; // 闰年二月有 29 天
+    return d >= 1 && d <= maxd;
+}
+
+int main() {
+    int start, end;                 // start: 起始日期, end: 终止日期
+    cin >> start >> end;
+    int ans = 0;                    // ans: 回文日期个数
+    // 原理：枚举年份前四位，翻转拼接得到完整回文日期，再检查合法性
+    for (int y = start / 10000; y <= end / 10000; y++) { // y: 年份
+        int rev = 0;                // rev: y 的翻转数
+        int tmp = y;
+        for (int k = 0; k < 4; k++) {
+            rev = rev * 10 + tmp % 10;
+            tmp /= 10;
+        }
+        int m = rev / 100;          // m: 月份（翻转后的前两位）
+        int d = rev % 100;          // d: 日期（翻转后的后两位）
+        int date = y * 10000 + rev; // date: 完整回文日期
+        if (date >= start && date <= end && isValid(y, m, d)) {
+            ans++;
+        }
+    }
+    cout << ans << endl;
+    return 0;
+}
+\end{lstlisting}
+
+\newpage
+
+% ================================================================
+%                        第二章：贪心
+% ================================================================
+\section{贪心}
+贪心算法（Greedy）在每一步选择中都采取当前状态下最优的选择，期望最终全局最优。使用贪心的前提是问题具有\textbf{贪心选择性质}（局部最优能推出全局最优）和\textbf{最优子结构}。
+
+% -------- 2.1 区间选点 --------
+\subsection{区间选点（最少点覆盖所有区间）}
+\textbf{适用场景：} 给定多个区间 $[l_i, r_i]$，在数轴上放置最少的点使得每个区间内至少有一个点。典型应用：雷达覆盖、传感器部署。
+
+\textbf{题目：} 给定 $N$ 个闭区间，求最少需要选多少个点使得每个区间内至少包含一个选出的点。
+
+\begin{lstlisting}[caption={贪心——按右端点排序，每次选右端点}]
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+const int MAXN = 100005;            // MAXN: 最大区间数
+struct Range {
+    int l, r;                       // l: 左端点, r: 右端点
+    // 按右端点升序排序：右端点越靠左，留给后面区间的空间越大
+    bool operator<(const Range& other) const {
+        return r < other.r;
+    }
+} ranges[MAXN];
+
+int main() {
+    int n;                          // n: 区间个数
+    cin >> n;
+    for (int i = 0; i < n; i++) cin >> ranges[i].l >> ranges[i].r;
+    sort(ranges, ranges + n);       // 按右端点排序
+    int ans = 0;                    // ans: 所选点数
+    int last = -2e9;                // last: 上一个选点的坐标（初始为极小值）
+    // 原理：每次选当前区间右端点，能尽可能多地覆盖后续区间
+    for (int i = 0; i < n; i++) {
+        if (ranges[i].l > last) {   // 当前区间未被上一个点覆盖
+            ans++;                  // 新增一个点
+            last = ranges[i].r;     // 点选在当前区间右端点
+        }
+    }
+    cout << ans << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 2.2 最大不相交区间 --------
+\subsection{最大不相交区间数量}
+\textbf{适用场景：} 从一组区间中选出尽可能多的互不重叠的区间，如活动安排、课程排课、会议室预定。
+
+\textbf{题目：} 给定 $N$ 个区间，选出最多的区间使得它们两两不相交。
+
+\begin{lstlisting}[caption={贪心——同类按右端点排序，每次选最早结束的}]
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+const int MAXN = 100005;
+struct Range {
+    int l, r;                       // l: 左端点, r: 右端点
+    bool operator<(const Range& other) const {
+        return r < other.r;         // 按右端点升序
+    }
+} ranges[MAXN];
+
+int main() {
+    int n;                          // n: 区间个数
+    cin >> n;
+    for (int i = 0; i < n; i++) cin >> ranges[i].l >> ranges[i].r;
+    sort(ranges, ranges + n);
+    int ans = 0;                    // ans: 最大不相交区间数
+    int last = -2e9;                // last: 上一个选中区间的右端点
+    // 原理：每次选最早结束的区间，给后续区间留下最大空间
+    for (int i = 0; i < n; i++) {
+        if (ranges[i].l > last) {   // 当前区间不与上一个选中区间重叠
+            ans++;
+            last = ranges[i].r;
+        }
+    }
+    cout << ans << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 2.3 区间覆盖 --------
+\subsection{区间覆盖（最小区间数覆盖线段）}
+\textbf{适用场景：} 用最少的给定区间覆盖一条指定线段，如铺设管道、信号覆盖、灌溉问题。
+
+\textbf{题目：} 给定 $N$ 个区间和一个目标线段 $[start, end]$，求最少需要多少个区间完全覆盖目标线段。
+
+\begin{lstlisting}[caption={贪心——每次选能覆盖当前缺口且右端点最远的区间}]
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+const int MAXN = 100005;
+struct Range {
+    int l, r;
+    bool operator<(const Range& other) const {
+        return l < other.l;         // 按左端点升序，方便从左到右扫描
+    }
+} ranges[MAXN];
+
+int main() {
+    int st, ed;                     // st: 目标线段起点, ed: 目标线段终点
+    cin >> st >> ed;
+    int n;                          // n: 可选区间个数
+    cin >> n;
+    for (int i = 0; i < n; i++) cin >> ranges[i].l >> ranges[i].r;
+    sort(ranges, ranges + n);
+    int ans = 0;                    // ans: 最少所需区间数
+    int cur = st;                   // cur: 当前已覆盖到的位置（缺口左端）
+    int i = 0;                      // i: 当前遍历到的区间下标
+    // 原理：在左端点 <= cur 的所有区间中，选右端点最大的那个
+    while (cur < ed) {
+        int maxr = -2e9;            // maxr: 能覆盖到的最远右端点
+        while (i < n && ranges[i].l <= cur) {
+            maxr = max(maxr, ranges[i].r);
+            i++;
+        }
+        if (maxr <= cur) {          // 无法继续扩展，覆盖失败
+            cout << -1 << endl;
+            return 0;
+        }
+        ans++;
+        cur = maxr;                 // 更新已覆盖位置
+    }
+    cout << ans << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 2.4 合并果子 --------
+\subsection{合并果子（哈夫曼编码）}
+\textbf{适用场景：} 将若干堆物品两两合并，每次合并的代价为两堆之和，求最小总代价。适用于数据压缩（哈夫曼树）、最优合并问题。
+
+\textbf{题目：} 有 $n$ 堆果子，每次合并任意两堆，代价为两堆重量之和。求将所有堆合并成一堆的最小代价。
+
+\begin{lstlisting}[caption={贪心——小根堆每次取最小的两堆合并}]
+#include <iostream>
+#include <queue>
+using namespace std;
+
+int main() {
+    int n;                          // n: 果子堆数
+    cin >> n;
+    priority_queue<int, vector<int>, greater<int>> heap;
+    // heap: 小根堆，每次能 O(log n) 取出最小值
+    for (int i = 0; i < n; i++) {
+        int x;                      // x: 第 i 堆的重量
+        cin >> x;
+        heap.push(x);
+    }
+    int ans = 0;                    // ans: 最小总代价
+    // 原理：哈夫曼算法——每次合并最小的两堆，合并后放回堆中
+    while (heap.size() > 1) {
+        int a = heap.top(); heap.pop(); // a: 当前最小堆
+        int b = heap.top(); heap.pop(); // b: 当前次小堆
+        int cost = a + b;           // cost: 合并 a 和 b 的代价
+        ans += cost;                // 累加总代价
+        heap.push(cost);            // 新堆放回堆中
+    }
+    cout << ans << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 2.5 排队接水 --------
+\subsection{排队接水（最小等待时间）}
+\textbf{适用场景：} 多人排队接受服务，每人服务耗时不同，调整顺序使总等待时间最小。适用于任务调度、客服排队。
+
+\textbf{题目：} $n$ 个人排队接水，第 $i$ 人需要 $t_i$ 时间。求一种排队顺序使所有人的等待时间之和最小。
+
+\begin{lstlisting}[caption={贪心——按服务时间升序排队，短作业优先}]
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+const int MAXN = 1005;
+struct Person {
+    int id;                         // id: 人员编号
+    int t;                          // t: 接水所需时间
+    bool operator<(const Person& other) const {
+        return t < other.t;         // 按时间升序，短作业优先
+    }
+} p[MAXN];
+
+int main() {
+    int n;                          // n: 人数
+    cin >> n;
+    for (int i = 0; i < n; i++) {
+        p[i].id = i + 1;
+        cin >> p[i].t;
+    }
+    sort(p, p + n);                 // 短作业优先排序
+    long long total = 0;            // total: 总等待时间
+    long long cur = 0;              // cur: 当前累计接水时间
+    // 原理：第 i 个人的等待时间 = 前面所有人的接水时间之和
+    for (int i = 0; i < n; i++) {
+        total += cur;               // cur 就是此人的等待时间
+        cur += p[i].t;              // 加上此人接水时间，传给下一个人
+    }
+    // 输出顺序
+    for (int i = 0; i < n; i++) cout << p[i].id << " ";
+    cout << endl;
+    printf("%.2f\n", (double)total / n); // 平均等待时间
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 2.6 货仓选址 --------
+\subsection{货仓选址（绝对值不等式）}
+\textbf{适用场景：} 在一条直线上选择一点，使得到所有给定点的距离之和最小。适用于物流中心选址、中位数优化问题。
+
+\textbf{题目：} 数轴上有 $N$ 个点，选择一个点使得到所有点的距离之和最小，求最小距离和。
+
+\begin{lstlisting}[caption={贪心——选中位数，利用绝对值不等式}]
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];                        // a[i]: 第 i 个点的坐标
+
+int main() {
+    int n;                          // n: 点数
+    cin >> n;
+    for (int i = 0; i < n; i++) cin >> a[i];
+    sort(a, a + n);                 // 排序后取中位数
+    int mid = a[n / 2];             // mid: 中位数坐标
+    long long ans = 0;              // ans: 最小距离和
+    // 原理：绝对值函数 |x-a| 的最优解 x 是 a 的中位数
+    for (int i = 0; i < n; i++) {
+        ans += abs(a[i] - mid);
+    }
+    cout << ans << endl;
+    return 0;
+}
+\end{lstlisting}
+
+\newpage
+
+% ================================================================
+%                    第三章：二分 / 三分
+% ================================================================
+\section{二分 / 三分}
+二分查找（Binary Search）在单调函数或有序序列上每次排除一半的搜索空间，复杂度 $O(\log n)$。三分查找用于单峰/单谷函数求极值。二分答案则将最优化问题转化为判定问题。
+
+% -------- 3.1 整数二分模板 --------
+\subsection{整数二分查找（精确匹配）}
+\textbf{适用场景：} 在\textbf{有序数组}中查找目标值是否存在，返回其下标。
+
+\textbf{题目：} 给定一个升序数组，判断目标值 $x$ 是否存在。
+
+\begin{lstlisting}[caption={整数二分——查找目标值}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];                        // a[]: 升序数组
+
+int main() {
+    int n, x;                       // n: 数组长度, x: 目标值
+    cin >> n >> x;
+    for (int i = 0; i < n; i++) cin >> a[i];
+    int l = 0, r = n - 1;           // l: 左边界, r: 右边界（闭区间）
+    int ans = -1;                   // ans: 目标下标，-1 表示未找到
+    // 原理：每次比较中间值，根据大小关系舍弃一半区间
+    while (l <= r) {
+        int mid = l + (r - l) / 2;  // mid: 中间下标（防溢出写法）
+        if (a[mid] == x) {
+            ans = mid;
+            break;
+        } else if (a[mid] < x) {
+            l = mid + 1;            // x 在右半部分
+        } else {
+            r = mid - 1;            // x 在左半部分
+        }
+    }
+    cout << ans << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 3.2 二分查找左边界 --------
+\subsection{二分查找左边界（第一个 $\ge x$ 的位置）}
+\textbf{适用场景：} 在有序数组中查找\textbf{第一个大于等于目标值}的位置。典型应用：有序数组插入位置、找第一个满足条件的元素。
+
+\textbf{题目：} 给定升序数组，求第一个大于等于 $x$ 的元素下标，不存在则输出 $n$。
+
+\begin{lstlisting}[caption={二分查找——第一个大于等于 x 的位置（lower\_bound）}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];
+
+int main() {
+    int n, x;
+    cin >> n >> x;
+    for (int i = 0; i < n; i++) cin >> a[i];
+    int l = 0, r = n;               // r = n 表示答案可能是 n（不存在的情况）
+    // 原理：维护答案区间 [l, r)，每次将区间二分
+    while (l < r) {
+        int mid = l + (r - l) / 2;
+        if (a[mid] >= x) {
+            r = mid;                // mid 满足条件，收缩右边界
+        } else {
+            l = mid + 1;            // mid 不满足，收缩左边界
+        }
+    }
+    cout << l << endl;              // l 即为第一个 >= x 的下标
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 3.3 二分查找右边界 --------
+\subsection{二分查找右边界（最后一个 $\le x$ 的位置）}
+\textbf{适用场景：} 在有序数组中查找\textbf{最后一个小于等于目标值}的位置。适用于查找某个元素最后一次出现的位置。
+
+\begin{lstlisting}[caption={二分查找——最后一个小于等于 x 的位置}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];
+
+int main() {
+    int n, x;
+    cin >> n >> x;
+    for (int i = 0; i < n; i++) cin >> a[i];
+    int l = 0, r = n - 1;           // 闭区间 [l, r]
+    int ans = -1;                   // ans: 最后一个 <= x 的下标
+    while (l <= r) {
+        int mid = l + (r - l) / 2;
+        if (a[mid] <= x) {
+            ans = mid;              // 记录当前满足条件的下标
+            l = mid + 1;            // 尝试找更靠后的位置
+        } else {
+            r = mid - 1;
+        }
+    }
+    cout << ans << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 3.4 浮点数二分 --------
+\subsection{浮点数二分（求平方根/立方根）}
+\textbf{适用场景：} 在实数范围内利用二分逼近解，如求方程根、开方、最大化平均值等。
+
+\textbf{题目：} 给定一个正实数 $x$，求其平方根（精确到 $10^{-6}$）。
+
+\begin{lstlisting}[caption={浮点数二分——求平方根}]
+#include <iostream>
+#include <iomanip>
+#include <cmath>
+using namespace std;
+
+int main() {
+    double x;                       // x: 被开方数
+    cin >> x;
+    double l = 0, r = max(1.0, x);  // l: 左边界, r: 右边界（注意 x<1 时平方根 > x）
+    const double eps = 1e-8;        // eps: 精度要求
+    // 原理：在实数区间上二分，直至区间长度小于精度
+    while (r - l > eps) {
+        double mid = (l + r) / 2;   // mid: 区间中点
+        if (mid * mid >= x) {
+            r = mid;                // mid 的平方太大，平方根在左侧
+        } else {
+            l = mid;                // mid 的平方太小，平方根在右侧
+        }
+    }
+    cout << fixed << setprecision(6) << l << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 3.5 二分答案（分割数组） --------
+\subsection{二分答案——最小化最大值}
+\textbf{适用场景：} 答案具有\textbf{单调性}：如果某个值可行，则更大的值一定可行。将"求最小/最大的最优值"转化为"判断某个值是否可行"的判定问题。
+
+\textbf{题目：} 将 $n$ 个正整数分成连续的 $m$ 段，使得各段和的最大值最小，求这个最小值。
+
+\begin{lstlisting}[caption={二分答案——最小化各段和的最大值}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];                        // a[i]: 第 i 个数
+int n, m;                           // n: 数字个数, m: 要分成的段数
+
+// 判断在每段和不超过 limit 的情况下能否分成 <= m 段
+bool check(long long limit) {
+    int cnt = 1;                    // cnt: 段数（至少为 1）
+    long long sum = 0;              // sum: 当前段的累加和
+    for (int i = 0; i < n; i++) {
+        if (a[i] > limit) return false; // 单个元素大于限制，不可能
+        if (sum + a[i] > limit) {   // 当前段已满
+            cnt++;                  // 新开一段
+            sum = a[i];             // 新段的第一个元素
+        } else {
+            sum += a[i];
+        }
+    }
+    return cnt <= m;                // 段数是否在允许范围内
+}
+
+int main() {
+    cin >> n >> m;
+    long long l = 0, r = 0;         // l: 二分左界（最大单元素），r: 二分右界（总和）
+    for (int i = 0; i < n; i++) {
+        cin >> a[i];
+        l = max(l, (long long)a[i]);
+        r += a[i];
+    }
+    // 原理：limit 越大越容易满足，答案单调，二分查找最小的可行 limit
+    while (l < r) {
+        long long mid = l + (r - l) / 2;
+        if (check(mid)) {
+            r = mid;                // mid 可行，尝试更小的值
+        } else {
+            l = mid + 1;            // mid 不可行，需要更大的值
+        }
+    }
+    cout << l << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 3.6 三分查找 --------
+\subsection{三分查找（单峰函数极值）}
+\textbf{适用场景：} 求\textbf{单峰函数（先增后减）}的极大值或\textbf{单谷函数（先减后增）}的极小值，适用于凸优化问题。
+
+\textbf{题目：} 给定一个先增后减的数组，求其最大值。
+
+\begin{lstlisting}[caption={三分查找——求单峰数组最大值}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];                        // a[]: 单峰数组（先严格递增再严格递减）
+
+int main() {
+    int n;                          // n: 数组长度
+    cin >> n;
+    for (int i = 0; i < n; i++) cin >> a[i];
+    int l = 0, r = n - 1;           // l: 左边界, r: 右边界
+    // 原理：取两个三分点 m1, m2，比较大小，每次舍弃单调性不符的那 1/3 区间
+    while (r - l > 2) {             // 区间足够大时才三分
+        int m1 = l + (r - l) / 3;   // m1: 左三分点
+        int m2 = r - (r - l) / 3;   // m2: 右三分点
+        if (a[m1] < a[m2]) {
+            l = m1;                 // 最大值在 m1 右侧
+        } else {
+            r = m2;                 // 最大值在 m2 左侧
+        }
+    }
+    // 小区间内直接扫描
+    int ans = a[l];
+    for (int i = l + 1; i <= r; i++) ans = max(ans, a[i]);
+    cout << ans << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 3.7 二分查找旋转数组 --------
+\subsection{二分查找旋转数组的最小值}
+\textbf{适用场景：} 有序数组经过旋转（前面若干元素移到末尾）后查找最小值或目标值。利用部分有序的特性仍可二分。
+
+\textbf{题目：} 给定一个升序数组经过一次旋转后的数组（元素互不相同），求其最小值。
+
+\begin{lstlisting}[caption={二分查找——旋转有序数组中的最小值}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];                        // a[]: 旋转后的数组（原数组升序无重复）
+
+int main() {
+    int n;                          // n: 数组长度
+    cin >> n;
+    for (int i = 0; i < n; i++) cin >> a[i];
+    int l = 0, r = n - 1;
+    // 原理：将 a[mid] 与 a[r] 比较，判断最小值在左半还是右半
+    while (l < r) {
+        int mid = l + (r - l) / 2;
+        if (a[mid] < a[r]) {
+            r = mid;                // 右半有序，最小值在左半（含 mid）
+        } else {
+            l = mid + 1;            // 左半有序，最小值在右半
+        }
+    }
+    cout << a[l] << endl;           // l 即为最小值下标
+    return 0;
+}
+\end{lstlisting}
+
+\newpage
+
+% ================================================================
+%                   第四章：前缀和与差分
+% ================================================================
+\section{前缀和与差分}
+前缀和（Prefix Sum）将区间求和从 $O(n)$ 降至 $O(1)$；差分（Difference）将区间增减从 $O(n)$ 降至 $O(1)$。两者互为逆运算，是处理批量区间操作的核心工具。
+
+% -------- 4.1 一维前缀和 --------
+\subsection{一维前缀和——区间和查询}
+\textbf{适用场景：} 静态数组上频繁查询任意区间 $[L,R]$ 的元素和，预处理 $O(n)$，单次查询 $O(1)$。
+
+\textbf{题目：} 给定 $n$ 个整数和 $q$ 个查询，每次查询区间 $[L,R]$ 的元素和。
+
+\begin{lstlisting}[caption={一维前缀和——O(1) 区间和查询}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];                        // a[i]: 原数组第 i 个元素（1-indexed）
+long long pre[MAXN];                // pre[i]: 前缀和，pre[i] = a[1] + a[2] + ... + a[i]
+
+int main() {
+    int n, q;                       // n: 数组长度, q: 查询次数
+    cin >> n >> q;
+    for (int i = 1; i <= n; i++) cin >> a[i];
+    // 预处理前缀和：pre[i] = pre[i-1] + a[i]
+    for (int i = 1; i <= n; i++) {
+        pre[i] = pre[i-1] + a[i];
+    }
+    while (q--) {
+        int L, R;                   // L: 查询左端点, R: 查询右端点
+        cin >> L >> R;
+        // 原理：区间和 = 前缀和[R] - 前缀和[L-1]
+        cout << pre[R] - pre[L-1] << endl;
+    }
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 4.2 二维前缀和 --------
+\subsection{二维前缀和——子矩阵和查询}
+\textbf{适用场景：} 静态矩阵上频繁查询子矩阵的元素和，如激光炸弹、图像积分图、子矩阵求和。预处理 $O(nm)$，查询 $O(1)$。
+
+\textbf{题目：} 给定 $n \times m$ 矩阵和 $q$ 个查询，每次求 $(x_1,y_1)$ 到 $(x_2,y_2)$ 子矩阵的元素和。
+
+\begin{lstlisting}[caption={二维前缀和——O(1) 子矩阵和查询}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 1005;
+int a[MAXN][MAXN];                  // a[i][j]: 原矩阵第 i 行第 j 列元素
+long long pre[MAXN][MAXN];          // pre[i][j]: (1,1) 到 (i,j) 的矩阵和
+
+int main() {
+    int n, m, q;                    // n: 行数, m: 列数, q: 查询次数
+    cin >> n >> m >> q;
+    for (int i = 1; i <= n; i++)
+        for (int j = 1; j <= m; j++)
+            cin >> a[i][j];
+    // 预处理二维前缀和
+    // 原理：pre[i][j] = pre[i-1][j] + pre[i][j-1] - pre[i-1][j-1] + a[i][j]
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= m; j++) {
+            pre[i][j] = pre[i-1][j] + pre[i][j-1] - pre[i-1][j-1] + a[i][j];
+        }
+    }
+    while (q--) {
+        int x1, y1, x2, y2;         // (x1,y1): 左上角, (x2,y2): 右下角
+        cin >> x1 >> y1 >> x2 >> y2;
+        // 原理：子矩阵和 = 右下角前缀和 - 左 - 上 + 左上（容斥原理）
+        long long ans = pre[x2][y2] - pre[x1-1][y2] - pre[x2][y1-1] + pre[x1-1][y1-1];
+        cout << ans << endl;
+    }
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 4.3 一维差分 --------
+\subsection{一维差分——区间增减操作}
+\textbf{适用场景：} 对一个数组进行多次区间加减操作，最后查询最终数组。差分将每次区间修改从 $O(n)$ 降到 $O(1)$。
+
+\textbf{题目：} 初始全零数组，进行 $m$ 次操作：对 $[L,R]$ 区间每个元素加 $c$。输出最终数组。
+
+\begin{lstlisting}[caption={一维差分——O(1) 区间增减}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int diff[MAXN];                     // diff[i]: 差分数组，diff[i] = a[i] - a[i-1]
+
+int main() {
+    int n, m;                       // n: 数组长度, m: 操作次数
+    cin >> n >> m;
+    // diff 初始全 0（对应原数组全 0）
+    // 原理：对 [L,R] 加 c，等价于 diff[L] += c, diff[R+1] -= c
+    while (m--) {
+        int L, R, c;                // L,R: 操作区间, c: 增加值
+        cin >> L >> R >> c;
+        diff[L] += c;               // 从 L 开始影响生效
+        diff[R + 1] -= c;           // 从 R+1 开始影响消除
+    }
+    // 对差分数组做前缀和还原原数组
+    int cur = 0;                    // cur: 当前位置的前缀和即 a[i]
+    for (int i = 1; i <= n; i++) {
+        cur += diff[i];             // cur = a[i]
+        cout << cur << " ";
+    }
+    cout << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 4.4 二维差分 --------
+\subsection{二维差分——子矩阵增减操作}
+\textbf{适用场景：} 对矩阵进行多次子矩阵批量加减，最后输出最终矩阵。典型应用：二维区间修改、棋盘覆盖。
+
+\textbf{题目：} 初始全零 $n\times m$ 矩阵，$q$ 次操作：对 $(x_1,y_1)$ 到 $(x_2,y_2)$ 子矩阵每个元素加 $c$。输出最终矩阵。
+
+\begin{lstlisting}[caption={二维差分——O(1) 子矩阵增减}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 1005;
+int diff[MAXN][MAXN];               // diff[i][j]: 二维差分数组
+
+int main() {
+    int n, m, q;                    // n: 行数, m: 列数, q: 操作次数
+    cin >> n >> m >> q;
+    // 原理：子矩阵加 c 转化为四个角上的差分操作（二维容斥）
+    // diff[x1][y1] += c, diff[x2+1][y1] -= c,
+    // diff[x1][y2+1] -= c, diff[x2+1][y2+1] += c
+    while (q--) {
+        int x1, y1, x2, y2, c;      // (x1,y1): 左上角, (x2,y2): 右下角, c: 增加值
+        cin >> x1 >> y1 >> x2 >> y2 >> c;
+        diff[x1][y1] += c;
+        diff[x2 + 1][y1] -= c;
+        diff[x1][y2 + 1] -= c;
+        diff[x2 + 1][y2 + 1] += c;
+    }
+    // 对差分数组做二维前缀和还原
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= m; j++) {
+            diff[i][j] += diff[i-1][j] + diff[i][j-1] - diff[i-1][j-1];
+            cout << diff[i][j] << " ";
+        }
+        cout << endl;
+    }
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 4.5 前缀和求区间内特定值个数 --------
+\subsection{前缀和——区间内特定值出现次数}
+\textbf{适用场景：} 多次查询某个区间内某个值出现了多少次（或区间内满足某条件的元素个数）。对每种值分别建前缀和。
+
+\textbf{题目：} 给定一个只包含小写字母的字符串，$q$ 次查询某区间内某字母的出现次数。
+
+\begin{lstlisting}[caption={前缀和——区间内字母出现次数}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int pre[MAXN][26];                  // pre[i][c]: 前 i 个字符中字母 c 的出现次数
+
+int main() {
+    string s;                       // s: 输入字符串
+    cin >> s;
+    int n = (int)s.size();          // n: 字符串长度
+    // 预处理：统计每种字母的前缀出现次数
+    for (int i = 1; i <= n; i++) {
+        for (int c = 0; c < 26; c++) {
+            pre[i][c] = pre[i-1][c]; // 继承之前的前缀
+        }
+        pre[i][s[i-1] - 'a']++;     // 当前字符累计加一
+    }
+    int q;                          // q: 查询次数
+    cin >> q;
+    while (q--) {
+        int L, R;                   // L: 左边界, R: 右边界
+        char ch;                    // ch: 查询的字母
+        cin >> L >> R >> ch;
+        int c = ch - 'a';           // c: 字母对应编号
+        // 原理：区间内出现次数 = 前缀[R] - 前缀[L-1]
+        cout << pre[R][c] - pre[L-1][c] << endl;
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\newpage
+
+% ================================================================
+%                        第五章：排序
+% ================================================================
+\section{排序}
+排序是将无序数据按特定顺序排列的过程，是许多算法的基础预处理步骤。不同排序算法在时间复杂度、稳定性、空间复杂度方面各有优劣。
+
+% -------- 5.1 快速排序 --------
+\subsection{快速排序}
+\textbf{适用场景：} 通用排序场景，平均 $O(n\log n)$，是实际应用中最高效的比较排序算法之一。不稳定排序。
+
+\textbf{题目：} 给定 $n$ 个整数，将其从小到大排序。
+
+\begin{lstlisting}[caption={快速排序——分治 + 分区}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];                        // a[]: 待排序数组
+
+// 原理：选取基准 pivot，将数组分为"小于 pivot"和"大于 pivot"两部分，递归排序
+// 分区函数：返回基准元素的最终位置
+int partition(int l, int r) {
+    int pivot = a[l + (r - l) / 2]; // pivot: 选取中间位置元素作为基准
+    int i = l - 1, j = r + 1;       // i: 左指针, j: 右指针
+    while (true) {
+        do { i++; } while (a[i] < pivot); // 从左找第一个 >= pivot 的元素
+        do { j--; } while (a[j] > pivot); // 从右找第一个 <= pivot 的元素
+        if (i >= j) return j;       // 指针相遇，分区完成
+        swap(a[i], a[j]);           // 交换逆序对
+    }
+}
+
+void quickSort(int l, int r) {
+    if (l >= r) return;             // 区间长度 <= 1，已有序
+    int p = partition(l, r);        // p: 分区点
+    quickSort(l, p);                // 递归排序左半部分
+    quickSort(p + 1, r);            // 递归排序右半部分
+}
+
+int main() {
+    int n;                          // n: 数组长度
+    cin >> n;
+    for (int i = 0; i < n; i++) cin >> a[i];
+    quickSort(0, n - 1);
+    for (int i = 0; i < n; i++) cout << a[i] << " ";
+    cout << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 5.2 归并排序 --------
+\subsection{归并排序}
+\textbf{适用场景：} 通用排序，稳定排序，同时可顺便统计逆序对数量。适合需要稳定性的场景。
+
+\textbf{题目：} 给定 $n$ 个整数，使用归并排序将其从小到大排序。
+
+\begin{lstlisting}[caption={归并排序——分治 + 合并有序数组}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];                        // a[]: 待排序数组
+int tmp[MAXN];                      // tmp[]: 归并时的临时数组
+
+// 原理：将两个有序子数组合并为一个有序数组
+void merge(int l, int mid, int r) {
+    int i = l, j = mid + 1, k = l;  // i: 左子数组指针, j: 右子数组指针, k: 临时数组指针
+    while (i <= mid && j <= r) {
+        if (a[i] <= a[j]) tmp[k++] = a[i++];
+        else             tmp[k++] = a[j++];
+    }
+    while (i <= mid) tmp[k++] = a[i++]; // 左半有剩余
+    while (j <= r)   tmp[k++] = a[j++]; // 右半有剩余
+    for (int p = l; p <= r; p++) a[p] = tmp[p]; // 写回原数组
+}
+
+void mergeSort(int l, int r) {
+    if (l >= r) return;
+    int mid = l + (r - l) / 2;      // mid: 中点
+    mergeSort(l, mid);              // 递归排序左半
+    mergeSort(mid + 1, r);          // 递归排序右半
+    merge(l, mid, r);               // 合并两个有序部分
+}
+
+int main() {
+    int n;
+    cin >> n;
+    for (int i = 0; i < n; i++) cin >> a[i];
+    mergeSort(0, n - 1);
+    for (int i = 0; i < n; i++) cout << a[i] << " ";
+    cout << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 5.3 归并排序求逆序对 --------
+\subsection{归并排序求逆序对数量}
+\textbf{适用场景：} 统计数组中 $i<j$ 且 $a_i > a_j$ 的数对个数。逆序对数量反映数组的有序程度，在排序问题、序列相似度分析中有重要应用。
+
+\textbf{题目：} 给定一个数组，求其中逆序对的总数。
+
+\begin{lstlisting}[caption={归并排序——计数逆序对}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];
+int tmp[MAXN];
+long long ans = 0;                  // ans: 逆序对总数（可能超过 int 范围）
+
+// 原理：在合并两个有序子数组时，每当从右子数组取元素，
+// 说明左子数组中剩余的所有元素都大于当前元素，均构成逆序对
+void merge(int l, int mid, int r) {
+    int i = l, j = mid + 1, k = l;
+    while (i <= mid && j <= r) {
+        if (a[i] <= a[j]) {
+            tmp[k++] = a[i++];
+        } else {
+            tmp[k++] = a[j++];
+            ans += mid - i + 1;     // 左半剩余元素个数即为新增逆序对数
+        }
+    }
+    while (i <= mid) tmp[k++] = a[i++];
+    while (j <= r)   tmp[k++] = a[j++];
+    for (int p = l; p <= r; p++) a[p] = tmp[p];
+}
+
+void mergeSort(int l, int r) {
+    if (l >= r) return;
+    int mid = l + (r - l) / 2;
+    mergeSort(l, mid);
+    mergeSort(mid + 1, r);
+    merge(l, mid, r);
+}
+
+int main() {
+    int n;
+    cin >> n;
+    for (int i = 0; i < n; i++) cin >> a[i];
+    mergeSort(0, n - 1);
+    cout << ans << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 5.4 快速选择（第k小数） --------
+\subsection{快速选择（求第 k 小的数）}
+\textbf{适用场景：} 在无序数组中查找第 $k$ 小（或第 $k$ 大）的元素，平均时间复杂度 $O(n)$，无需完全排序。适用于求中位数、Top K 问题。
+
+\textbf{题目：} 给定 $n$ 个整数，求其中第 $k$ 小的数（即从小到大排序后第 $k$ 个位置的数）。
+
+\begin{lstlisting}[caption={快速选择——基于快排分区，只递归一边}]
+#include <iostream>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];
+
+// 分区函数（同快速排序）
+int partition(int l, int r) {
+    int pivot = a[l + (r - l) / 2];
+    int i = l - 1, j = r + 1;
+    while (true) {
+        do { i++; } while (a[i] < pivot);
+        do { j--; } while (a[j] > pivot);
+        if (i >= j) return j;
+        swap(a[i], a[j]);
+    }
+}
+
+// 原理：分区后只递归包含第 k 小的那一半，另一半舍弃
+int quickSelect(int l, int r, int k) { // k: 查找第 k 小的数（k 从 1 开始）
+    if (l == r) return a[l];        // 区间只剩一个数
+    int p = partition(l, r);        // p: 分区点
+    int leftLen = p - l + 1;        // leftLen: 左半部分的元素个数
+    if (k <= leftLen) {
+        return quickSelect(l, p, k);// 第 k 小在左半部分
+    } else {
+        return quickSelect(p + 1, r, k - leftLen); // 在右半部分找第 k-leftLen 小
+    }
+}
+
+int main() {
+    int n, k;
+    cin >> n >> k;
+    for (int i = 0; i < n; i++) cin >> a[i];
+    cout << quickSelect(0, n - 1, k) << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 5.5 计数排序 --------
+\subsection{计数排序}
+\textbf{适用场景：} 数据范围较小（值域有限）的整数排序，时间复杂度 $O(n+m)$，其中 $m$ 为值域大小。稳定排序。不适合数据范围很大或存在负数的场景。
+
+\textbf{题目：} 给定 $n$ 个范围在 $[0, 10^5]$ 内的整数，将其从小到大排序。
+
+\begin{lstlisting}[caption={计数排序——统计各值出现次数}]
+#include <iostream>
+using namespace std;
+
+const int MAXV = 100005;            // MAXV: 值域上限
+int cnt[MAXV];                      // cnt[x]: 数值 x 出现的次数
+
+int main() {
+    int n;                          // n: 元素个数
+    cin >> n;
+    int maxv = 0;                   // maxv: 实际数据中的最大值
+    // 原理：统计每个数值出现的次数，再按数值顺序输出
+    for (int i = 0; i < n; i++) {
+        int x;                      // x: 当前读入的数值
+        cin >> x;
+        cnt[x]++;                   // 计数
+        maxv = max(maxv, x);
+    }
+    for (int v = 0; v <= maxv; v++) {
+        while (cnt[v]--) {          // 输出 cnt[v] 次数值 v
+            cout << v << " ";
+        }
+    }
+    cout << endl;
+    return 0;
+}
+\end{lstlisting}
+
+% -------- 5.6 基数排序 --------
+\subsection{基数排序}
+\textbf{适用场景：} 对整数或定长字符串排序，通过从低位到高位逐位进行稳定排序（通常搭配计数排序），时间复杂度 $O(d(n+k))$，$d$ 为位数。适合数值范围大但位数少的场景。
+
+\textbf{题目：} 给定 $n$ 个非负整数，使用基数排序将其从小到大排序。
+
+\begin{lstlisting}[caption={基数排序——按位 LSD 排序（低位优先）}]
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+const int MAXN = 100005;
+int a[MAXN];                        // a[]: 待排序数组
+int b[MAXN];                        // b[]: 辅助数组
+int cnt[10];                        // cnt[d]: 当前位数字 d 的出现次数（基数为 10）
+
+int main() {
+    int n;                          // n: 元素个数
+    cin >> n;
+    int maxv = 0;                   // maxv: 最大值，用于确定位数
+    for (int i = 0; i < n; i++) {
+        cin >> a[i];
+        maxv = max(maxv, a[i]);
+    }
+    // 原理：从低位到高位，每次按当前位做一次稳定排序（计数排序）
+    // exp 表示当前处理的位权（1=个位, 10=十位, 100=百位...）
+    for (int exp = 1; maxv / exp > 0; exp *= 10) {
+        memset(cnt, 0, sizeof(cnt));
+        // 统计当前位各数字出现次数
+        for (int i = 0; i < n; i++) {
+            int digit = (a[i] / exp) % 10; // digit: a[i] 在当前位的数字
+            cnt[digit]++;
+        }
+        // 前缀和转换为位置索引（保证稳定性）
+        for (int d = 1; d < 10; d++) {
+            cnt[d] += cnt[d - 1];
+        }
+        // 从后往前遍历，确保稳定排序
+        for (int i = n - 1; i >= 0; i--) {
+            int digit = (a[i] / exp) % 10;
+            b[--cnt[digit]] = a[i]; // 放入对应位置
+        }
+        // 写回原数组
+        for (int i = 0; i < n; i++) a[i] = b[i];
+    }
+    for (int i = 0; i < n; i++) cout << a[i] << " ";
+    cout << endl;
+    return 0;
+}
+\end{lstlisting}
+
+\newpage
+% ================================================================
+%                        附录：算法对比总结
+% ================================================================
+\section*{附录：算法对比总结}
+\addcontentsline{toc}{section}{附录：算法对比总结}
+
+\begin{table}[h]
+    \centering
+    \caption{各算法核心思想与适用条件对比}
+    \begin{tabularx}{\textwidth}{cXX}
+        \toprule
+        \textbf{算法类别} & \textbf{核心思想} & \textbf{适用条件} \\
+        \midrule
+        枚举 & 遍历解空间中所有候选解 & 数据规模小（$n\le 20\sim30$），解空间有限 \\
+        \midrule
+        贪心 & 每步选局部最优，期望全局最优 & 具有贪心选择性质和最优子结构 \\
+        \midrule
+        二分查找 & 在单调区间上每次排除一半 & 数据有序或函数单调 \\
+        \midrule
+        二分答案 & 将最优化转为判定，利用答案单调性 & 答案存在上下界且满足单调性 \\
+        \midrule
+        三分查找 & 在单峰/单谷函数上缩小区间 & 函数严格单峰或单谷 \\
+        \midrule
+        前缀和 & 预处理累加和，O(1)区间查询 & 静态数组，需要频繁区间求和 \\
+        \midrule
+        差分 & 记录变化量，O(1)区间修改 & 批量区间修改后统一查询结果 \\
+        \midrule
+        快速排序 & 分治+分区，平均O(n log n) & 通用比较排序，不稳定 \\
+        \midrule
+        归并排序 & 分治+合并，稳定O(n log n) & 需要稳定排序或统计逆序对 \\
+        \midrule
+        计数排序 & 统计出现次数，O(n+m) & 值域小的整数排序 \\
+        \midrule
+        基数排序 & 按位稳定排序，O(d(n+k)) & 整数/定长串，位数少 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\end{document}
